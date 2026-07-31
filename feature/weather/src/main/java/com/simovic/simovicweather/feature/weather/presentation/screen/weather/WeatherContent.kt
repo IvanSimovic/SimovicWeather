@@ -17,12 +17,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppSearchField
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.WeatherCard
 import com.simovic.simovicweather.feature.base.presentation.ui.AppTheme
 import com.simovic.simovicweather.feature.weather.R
 
 @Composable
-internal fun WeatherContent(weather: WeatherUiModel) {
+internal fun WeatherContent(
+    weather: WeatherUiModel,
+    onLocationClick: () -> Unit,
+) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth().safeDrawingPadding(),
         contentPadding =
@@ -32,6 +36,17 @@ internal fun WeatherContent(weather: WeatherUiModel) {
             ),
         verticalArrangement = Arrangement.spacedBy(AppTheme.dimensions.spaceL),
     ) {
+        item {
+            AppSearchField(
+                value = weather.locationName.ifBlank { stringResource(R.string.current_location) },
+                onValueChange = {},
+                placeholder = stringResource(R.string.search_city),
+                    onClear = null,
+                    readOnly = true,
+                    onClick = onLocationClick,
+                    onClickLabel = stringResource(R.string.choose_location),
+                )
+        }
         item {
             CurrentWeatherContent(weather = weather)
         }
@@ -48,10 +63,6 @@ internal fun WeatherContent(weather: WeatherUiModel) {
 private fun CurrentWeatherContent(weather: WeatherUiModel) {
     val current = weather.current
     WeatherCard(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = weather.locationName.ifBlank { stringResource(R.string.current_location) },
-            style = AppTheme.typography.headlineMedium,
-        )
         Text(
             text = stringResource(R.string.current_conditions),
             style = AppTheme.typography.bodySmall,

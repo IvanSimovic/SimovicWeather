@@ -88,7 +88,7 @@ private fun CenteredStateCard(
     }
 }
 
-private val WeatherErrorReason.messageRes: Int
+internal val WeatherErrorReason.messageRes: Int
     @StringRes
     get() =
         when (this) {

@@ -3,6 +3,12 @@
     <string name="weather_near_you">Weather near you</string>
     <string name="weather_near_you_explanation">Use your approximate location to see current and weekly weather.</string>
     <string name="current_location">Current location</string>
+    <string name="choose_location">Choose location</string>
+    <string name="close">Close</string>
+    <string name="search_city">Search for a city</string>
+    <string name="search_city_minimum_characters">Enter at least three characters.</string>
+    <string name="search_city_no_results">No matching cities found.</string>
+    <string name="location_permission_search_fallback">Location access was not granted. You can still search for any city.</string>
     <string name="location_access_needed">Location access needed</string>
     <string name="location_permission_explanation">Approximate location is enough to show weather near you.</string>
     <string name="use_current_location">Use current location</string>

@@ -49,9 +49,15 @@ private fun WeatherNonRetryableErrorPreview() {
 private fun WeatherPreview(uiState: WeatherUiState) {
     AppPreview {
         WeatherScreenContent(
-            uiState = uiState,
+            uiState = WeatherScreenUiState(forecast = uiState),
             onUseCurrentLocation = {},
             onRetry = {},
+            onSearchOpen = {},
+            onSearchClose = {},
+            onSearchQueryChange = {},
+            onSearchClear = {},
+            onSearchRetry = {},
+            onLocationSelect = {},
         )
     }
 }
