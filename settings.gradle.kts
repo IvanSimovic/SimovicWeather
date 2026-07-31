@@ -26,6 +26,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "SimovicWeather"
 include(":app")
+include(":feature:base")
 include(":feature:weather")
 
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
