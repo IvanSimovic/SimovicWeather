@@ -8,13 +8,13 @@ import com.simovic.simovicweather.feature.weather.R
 @PreviewAppThemes
 @Composable
 private fun WeatherInitialPreview() {
-    WeatherPreview(uiState = WeatherUiState.Initial())
+    WeatherPreview(uiState = WeatherUiState.Initial)
 }
 
 @PreviewAppThemes
 @Composable
 private fun WeatherLoadingPreview() {
-    WeatherPreview(uiState = WeatherUiState.Loading())
+    WeatherPreview(uiState = WeatherUiState.Loading)
 }
 
 @PreviewAppThemes
@@ -26,7 +26,7 @@ private fun WeatherContentPreview() {
 @PreviewAppThemes
 @Composable
 private fun WeatherPermissionPreview() {
-    WeatherPreview(uiState = WeatherUiState.PermissionRequired())
+    WeatherPreview(uiState = WeatherUiState.PermissionRequired)
 }
 
 @PreviewAppThemes

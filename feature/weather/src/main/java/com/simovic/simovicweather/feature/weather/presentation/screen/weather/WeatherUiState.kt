@@ -3,46 +3,54 @@ package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 import androidx.compose.runtime.Immutable
 
 @Immutable
+internal data class WeatherScreenUiState(
+    val forecast: WeatherUiState = WeatherUiState.Initial,
+    val search: LocationSearchUiState = LocationSearchUiState(),
+)
+
+@Immutable
 internal sealed interface WeatherUiState {
-    val search: SearchUiState
+    data object Initial : WeatherUiState
 
-    data class Initial(
-        override val search: SearchUiState = SearchUiState.Idle,
-    ) : WeatherUiState
-
-    data class Loading(
-        override val search: SearchUiState = SearchUiState.Idle,
-    ) : WeatherUiState
+    data object Loading : WeatherUiState
 
     data class Content(
         val weather: WeatherUiModel,
-        override val search: SearchUiState = SearchUiState.Idle,
     ) : WeatherUiState
 
-    data class PermissionRequired(
-        override val search: SearchUiState = SearchUiState.Idle,
-    ) : WeatherUiState
+    data object PermissionRequired : WeatherUiState
 
     data class Error(
         val reason: WeatherErrorReason,
         val canRetry: Boolean,
-        override val search: SearchUiState = SearchUiState.Idle,
     ) : WeatherUiState
 }
 
 @Immutable
-internal sealed interface SearchUiState {
-    data object Idle : SearchUiState
+internal data class LocationSearchUiState(
+    val isVisible: Boolean = false,
+    val query: String = "",
+    val status: LocationSearchStatus = LocationSearchStatus.Idle,
+    val isLocationPermissionDenied: Boolean = false,
+)
 
-    data object Searching : SearchUiState
+@Immutable
+internal sealed interface LocationSearchStatus {
+    data object Idle : LocationSearchStatus
+
+    data object QueryTooShort : LocationSearchStatus
+
+    data object Searching : LocationSearchStatus
 
     data class Results(
         val locations: List<LocationUiModel>,
-    ) : SearchUiState
+    ) : LocationSearchStatus
 
-    data object NoResults : SearchUiState
+    data object NoResults : LocationSearchStatus
 
-    data object Failed : SearchUiState
+    data class Failed(
+        val reason: WeatherErrorReason,
+    ) : LocationSearchStatus
 }
 
 internal enum class WeatherErrorReason {

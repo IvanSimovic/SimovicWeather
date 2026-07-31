@@ -1,5 +1,6 @@
 package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 
+import com.simovic.simovicweather.feature.base.domain.result.AppFailure
 import com.simovic.simovicweather.feature.weather.R
 import com.simovic.simovicweather.feature.weather.domain.model.Coordinates
 import com.simovic.simovicweather.feature.weather.domain.model.CurrentWeather
@@ -107,6 +108,18 @@ class WeatherPresentationMapperTest {
 
         assertEquals(R.string.weather_condition_unknown, condition.descriptionRes)
         assertEquals(WeatherIcon.UNKNOWN, condition.icon)
+    }
+
+    @Test
+    fun `maps failures to weather error state with retryability`() {
+        assertEquals(
+            WeatherUiState.Error(reason = WeatherErrorReason.NETWORK, canRetry = true),
+            mapper.toWeatherErrorUiState(AppFailure.Connectivity()),
+        )
+        assertEquals(
+            WeatherUiState.Error(reason = WeatherErrorReason.MALFORMED_DATA, canRetry = false),
+            mapper.toWeatherErrorUiState(AppFailure.MalformedData()),
+        )
     }
 
     private fun forecast(weatherCode: Int = 1): WeatherForecast =

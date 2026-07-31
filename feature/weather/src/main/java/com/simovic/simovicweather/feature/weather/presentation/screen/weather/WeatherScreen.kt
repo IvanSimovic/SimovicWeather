@@ -32,7 +32,7 @@ fun WeatherScreen() {
     }
 
     WeatherScreenContent(
-        uiState = uiState,
+        uiState = uiState.forecast,
         onUseCurrentLocation = { locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
         onRetry = viewModel::retry,
     )

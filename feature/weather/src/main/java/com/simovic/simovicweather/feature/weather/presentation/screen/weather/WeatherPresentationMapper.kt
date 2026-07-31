@@ -43,6 +43,12 @@ internal class WeatherPresentationMapper(
 
     fun toLocationUiModel(location: WeatherLocation) = LocationUiModel(locationLabel(location), location)
 
+    fun toWeatherErrorUiState(failure: AppFailure) =
+        WeatherUiState.Error(
+            reason = toError(failure),
+            canRetry = failure !is AppFailure.MalformedData,
+        )
+
     fun toError(failure: AppFailure): WeatherErrorReason =
         when (failure) {
             is AppFailure.Connectivity -> WeatherErrorReason.NETWORK
