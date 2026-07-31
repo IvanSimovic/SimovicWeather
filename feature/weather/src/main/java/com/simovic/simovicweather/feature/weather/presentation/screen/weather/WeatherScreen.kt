@@ -32,24 +32,33 @@ fun WeatherScreen() {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val locationPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            viewModel.onLocationPermissionResult(granted)
+            viewModel.onLocationPermissionRequestResult(granted)
         }
 
     LaunchedEffect(Unit) {
         val isGranted =
             ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
                 PackageManager.PERMISSION_GRANTED
-        if (isGranted) viewModel.onLocationPermissionResult(true)
+        viewModel.onInitialLocationPermissionChecked(isGranted)
     }
 
     WeatherScreenContent(
         uiState = uiState,
-        onUseCurrentLocation = { locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION) },
+        onUseCurrentLocation = {
+            val isGranted =
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
+            if (isGranted) {
+                viewModel.onCurrentLocationRequested()
+            } else {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+            }
+        },
         onRetry = viewModel::retry,
         onSearchOpen = viewModel::onSearchOpened,
         onSearchClose = viewModel::onSearchClosed,
         onSearchQueryChange = viewModel::onSearchQueryChanged,
-        onSearchClear = viewModel::onSearchCleared,
+        onSearchClear = { viewModel.onSearchQueryChanged("") },
         onSearchRetry = viewModel::retrySearch,
         onLocationSelect = viewModel::onLocationSelected,
     )
@@ -82,8 +91,6 @@ internal fun WeatherScreenContent(
                         weather = forecast.weather,
                         onLocationClick = onSearchOpen,
                     )
-                WeatherUiState.PermissionRequired ->
-                    LocationPermissionContent(onUseCurrentLocation = onUseCurrentLocation)
                 is WeatherUiState.Error ->
                     WeatherErrorContent(
                         reason = forecast.reason,

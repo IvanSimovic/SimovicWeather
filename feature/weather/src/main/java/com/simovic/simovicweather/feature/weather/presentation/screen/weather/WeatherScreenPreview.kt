@@ -25,12 +25,6 @@ private fun WeatherContentPreview() {
 
 @PreviewAppThemes
 @Composable
-private fun WeatherPermissionPreview() {
-    WeatherPreview(uiState = WeatherUiState.PermissionRequired)
-}
-
-@PreviewAppThemes
-@Composable
 private fun WeatherRetryableErrorPreview() {
     WeatherPreview(
         uiState = WeatherUiState.Error(WeatherErrorReason.NETWORK, canRetry = true),

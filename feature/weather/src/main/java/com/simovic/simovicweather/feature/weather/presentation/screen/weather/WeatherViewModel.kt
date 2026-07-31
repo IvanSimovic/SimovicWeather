@@ -71,16 +71,18 @@ internal class WeatherViewModel(
         }
     }
 
-    fun onLocationPermissionResult(granted: Boolean) {
-        if (granted) {
-            load(getCurrentWeather::invoke)
-        } else {
-            mutableUiState.value = mutableUiState.value.copy(forecast = WeatherUiState.PermissionRequired)
-        }
+    fun onInitialLocationPermissionChecked(isGranted: Boolean) {
+        if (isGranted) loadCurrentLocationWeather() else openLocationSearch()
     }
 
+    fun onLocationPermissionRequestResult(granted: Boolean) {
+        if (granted) loadCurrentLocationWeather() else openLocationSearch(permissionDenied = true)
+    }
+
+    fun onCurrentLocationRequested() = loadCurrentLocationWeather()
+
     fun onSearchOpened() {
-        updateSearch { state -> state.copy(isVisible = true) }
+        openLocationSearch()
     }
 
     fun onSearchClosed() {
@@ -99,10 +101,6 @@ internal class WeatherViewModel(
         searchRequests.value = SearchRequest(query, ++searchRequestId)
     }
 
-    fun onSearchCleared() {
-        onSearchQueryChanged("")
-    }
-
     fun retrySearch() {
         val query = mutableUiState.value.search.query
         if (query.trim().length >= MINIMUM_QUERY_LENGTH) {
@@ -117,18 +115,41 @@ internal class WeatherViewModel(
 
     fun retry() = load(lastLoad)
 
+    private fun loadCurrentLocationWeather() {
+        onSearchClosed()
+        load(getCurrentWeather::invoke)
+    }
+
+    private fun openLocationSearch(permissionDenied: Boolean = false) {
+        updateSearch { state ->
+            state.copy(
+                isVisible = true,
+                isLocationPermissionDenied = permissionDenied,
+            )
+        }
+    }
+
     private fun load(block: suspend () -> Result<WeatherForecast>) {
         lastLoad = block
         forecastJob?.cancel()
+        val previousForecast = mutableUiState.value.forecast
         mutableUiState.value = mutableUiState.value.copy(forecast = WeatherUiState.Loading)
         forecastJob =
             viewModelScope.launch {
                 val forecast =
                     when (val result = block()) {
-                        is Result.Success -> WeatherUiState.Content(presentationMapper.toUiModel(result.value))
+                        is Result.Success -> {
+                            WeatherUiState.Content(presentationMapper.toUiModel(result.value))
+                        }
                         is Result.Failure -> {
                             if (result.reason == AppFailure.PermissionDenied) {
-                                WeatherUiState.PermissionRequired
+                                updateSearch { state ->
+                                    state.copy(
+                                        isVisible = true,
+                                        isLocationPermissionDenied = true,
+                                    )
+                                }
+                                previousForecast
                             } else {
                                 presentationMapper.toWeatherErrorUiState(result.reason)
                             }

@@ -18,8 +18,6 @@ internal sealed interface WeatherUiState {
         val weather: WeatherUiModel,
     ) : WeatherUiState
 
-    data object PermissionRequired : WeatherUiState
-
     data class Error(
         val reason: WeatherErrorReason,
         val canRetry: Boolean,

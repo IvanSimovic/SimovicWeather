@@ -9,10 +9,7 @@
     <string name="search_city_minimum_characters">Enter at least three characters.</string>
     <string name="search_city_no_results">No matching cities found.</string>
     <string name="location_permission_search_fallback">Location access was not granted. You can still search for any city.</string>
-    <string name="location_access_needed">Location access needed</string>
-    <string name="location_permission_explanation">Approximate location is enough to show weather near you.</string>
     <string name="use_current_location">Use current location</string>
-    <string name="allow_location_access">Allow location access</string>
     <string name="retry">Retry</string>
     <string name="current_conditions">Current conditions</string>
     <string name="feels_like">Feels like %1$s</string>

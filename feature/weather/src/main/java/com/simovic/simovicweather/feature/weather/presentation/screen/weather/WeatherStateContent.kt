@@ -28,16 +28,6 @@ internal fun WeatherIntroductionContent(onUseCurrentLocation: () -> Unit) {
 }
 
 @Composable
-internal fun LocationPermissionContent(onUseCurrentLocation: () -> Unit) {
-    CenteredStateCard(
-        titleRes = R.string.location_access_needed,
-        messageRes = R.string.location_permission_explanation,
-        actionRes = R.string.allow_location_access,
-        onAction = onUseCurrentLocation,
-    )
-}
-
-@Composable
 internal fun WeatherErrorContent(
     reason: WeatherErrorReason,
     canRetry: Boolean,

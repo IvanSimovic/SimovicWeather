@@ -72,6 +72,17 @@ private fun CitySearchFailurePreview() {
     )
 }
 
+@PreviewAppThemes
+@Composable
+private fun CitySearchPermissionDeniedPreview() {
+    CitySearchPreview(
+        LocationSearchUiState(
+            isVisible = true,
+            isLocationPermissionDenied = true,
+        ),
+    )
+}
+
 @Composable
 private fun CitySearchPreview(search: LocationSearchUiState) {
     AppPreview {

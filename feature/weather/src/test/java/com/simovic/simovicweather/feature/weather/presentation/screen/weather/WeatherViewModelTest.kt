@@ -159,13 +159,98 @@ class WeatherViewModelTest {
             assertTrue(viewModel.uiState.value.forecast is WeatherUiState.Content)
         }
 
+    @Test
+    fun `missing permission opens city picker without denial feedback`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = createViewModel()
+
+            viewModel.onInitialLocationPermissionChecked(isGranted = false)
+
+            assertTrue(viewModel.uiState.value.search.isVisible)
+            assertFalse(viewModel.uiState.value.search.isLocationPermissionDenied)
+            assertEquals(WeatherUiState.Initial, viewModel.uiState.value.forecast)
+        }
+
+    @Test
+    fun `refused permission keeps city picker open and preserves forecast`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel = createViewModel()
+            viewModel.onLocationSelected(LocationUiModel("Mostar", location(name = "Mostar")))
+            advanceUntilIdle()
+
+            viewModel.onSearchOpened()
+            viewModel.onLocationPermissionRequestResult(granted = false)
+
+            assertTrue(viewModel.uiState.value.search.isVisible)
+            assertTrue(viewModel.uiState.value.search.isLocationPermissionDenied)
+            assertTrue(viewModel.uiState.value.forecast is WeatherUiState.Content)
+        }
+
+    @Test
+    fun `granted permission request closes picker and loads current location`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val currentLocation = location(id = 3, name = "Current")
+            val weatherRepository = FakeWeatherRepository()
+            val viewModel =
+                createViewModel(
+                    weatherRepository = weatherRepository,
+                    deviceLocationRepository = FakeDeviceLocationRepository(currentLocation),
+                )
+            viewModel.onSearchOpened()
+
+            viewModel.onLocationPermissionRequestResult(granted = true)
+            advanceUntilIdle()
+
+            assertFalse(viewModel.uiState.value.search.isVisible)
+            assertEquals(listOf(currentLocation), weatherRepository.locations)
+            assertTrue(viewModel.uiState.value.forecast is WeatherUiState.Content)
+        }
+
+    @Test
+    fun `available permission at startup loads current location`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val currentLocation = location(id = 3, name = "Current")
+            val weatherRepository = FakeWeatherRepository()
+            val viewModel =
+                createViewModel(
+                    weatherRepository = weatherRepository,
+                    deviceLocationRepository = FakeDeviceLocationRepository(currentLocation),
+                )
+
+            viewModel.onInitialLocationPermissionChecked(isGranted = true)
+            advanceUntilIdle()
+
+            assertEquals(listOf(currentLocation), weatherRepository.locations)
+            assertTrue(viewModel.uiState.value.forecast is WeatherUiState.Content)
+        }
+
+    @Test
+    fun `current location permission failure opens city picker and preserves forecast`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val viewModel =
+                createViewModel(
+                    deviceLocationRepository = PermissionDeniedDeviceLocationRepository(),
+                )
+            viewModel.onLocationSelected(LocationUiModel("Mostar", location(name = "Mostar")))
+            advanceUntilIdle()
+            val existingForecast = viewModel.uiState.value.forecast
+
+            viewModel.onCurrentLocationRequested()
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.search.isVisible)
+            assertTrue(viewModel.uiState.value.search.isLocationPermissionDenied)
+            assertEquals(existingForecast, viewModel.uiState.value.forecast)
+        }
+
     private fun createViewModel(
         searchRepository: FakeLocationRepository = FakeLocationRepository(),
         weatherRepository: FakeWeatherRepository = FakeWeatherRepository(),
+        deviceLocationRepository: DeviceLocationRepository = FakeDeviceLocationRepository(),
     ) = WeatherViewModel(
         getCurrentWeather =
             GetWeatherForCurrentLocationUseCase(
-                deviceLocationRepository = FakeDeviceLocationRepository(),
+                deviceLocationRepository = deviceLocationRepository,
                 weatherRepository = weatherRepository,
             ),
         getWeatherForLocation = GetWeatherForLocationUseCase(weatherRepository),
@@ -203,8 +288,15 @@ class WeatherViewModelTest {
         }
     }
 
-    private class FakeDeviceLocationRepository : DeviceLocationRepository {
-        override suspend fun getCurrentLocation(): Result<WeatherLocation> = Result.Success(location())
+    private class FakeDeviceLocationRepository(
+        private val location: WeatherLocation = location(),
+    ) : DeviceLocationRepository {
+        override suspend fun getCurrentLocation(): Result<WeatherLocation> = Result.Success(location)
+    }
+
+    private class PermissionDeniedDeviceLocationRepository : DeviceLocationRepository {
+        override suspend fun getCurrentLocation(): Result<WeatherLocation> =
+            Result.Failure(AppFailure.PermissionDenied)
     }
 
     private companion object {
