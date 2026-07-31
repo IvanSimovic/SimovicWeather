@@ -3,6 +3,7 @@ package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,10 +11,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,7 +29,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppButton
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppSearchField
+import com.simovic.simovicweather.feature.base.presentation.compose.composable.LoadingIndicator
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.WeatherBackground
+import com.simovic.simovicweather.feature.base.presentation.compose.composable.WeatherCard
 import com.simovic.simovicweather.feature.base.presentation.ui.AppTheme
 import com.simovic.simovicweather.feature.weather.R
 
@@ -55,7 +56,10 @@ internal fun CitySearchOverlay(
                     .fillMaxSize()
                     .safeDrawingPadding()
                     .imePadding()
-                    .padding(horizontal = AppTheme.dimensions.screenPadding),
+                    .padding(
+                        horizontal = AppTheme.dimensions.screenPadding,
+                        vertical = AppTheme.dimensions.spaceXxxl,
+                    ),
             verticalArrangement = Arrangement.spacedBy(AppTheme.dimensions.spaceL),
         ) {
             Row(
@@ -84,11 +88,7 @@ internal fun CitySearchOverlay(
                 modifier = Modifier.fillMaxWidth(),
             )
             if (search.isLocationPermissionDenied) {
-                Text(
-                    text = stringResource(R.string.location_permission_search_fallback),
-                    style = AppTheme.typography.bodySmall,
-                    color = AppTheme.colors.textSecondary,
-                )
+                PermissionDeniedMessage()
             }
             LocationSearchStatusContent(
                 status = search.status,
@@ -97,6 +97,21 @@ internal fun CitySearchOverlay(
                 modifier = Modifier.weight(1f),
             )
         }
+    }
+}
+
+@Composable
+private fun PermissionDeniedMessage() {
+    WeatherCard(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(AppTheme.dimensions.spaceL),
+        contentSpacing = AppTheme.dimensions.spaceXs,
+    ) {
+        Text(
+            text = stringResource(R.string.location_permission_search_fallback),
+            style = AppTheme.typography.bodySmall,
+            color = AppTheme.colors.textSecondary,
+        )
     }
 }
 
@@ -125,43 +140,57 @@ private fun LocationSearchStatusContent(
     when (status) {
         LocationSearchStatus.Idle -> Unit
         LocationSearchStatus.QueryTooShort -> SearchMessage(R.string.search_city_minimum_characters, modifier)
-        LocationSearchStatus.Searching ->
-            Column(
-                modifier = modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(AppTheme.dimensions.spaceXxl),
-                    color = AppTheme.colors.primary,
-                )
-            }
+        LocationSearchStatus.Searching -> LoadingIndicator(modifier = modifier)
         is LocationSearchStatus.Results ->
-            LazyColumn(modifier = modifier.fillMaxWidth()) {
-                items(
-                    items = status.locations,
-                    key = { location ->
-                        location.location.id
-                            ?: "${location.location.coordinates.latitude},${location.location.coordinates.longitude}"
-                    },
-                ) { location ->
-                    LocationResultRow(location = location, onClick = { onLocationSelect(location) })
+            SearchResults(
+                locations = status.locations,
+                onLocationSelect = onLocationSelect,
+                modifier = modifier,
+            )
+        LocationSearchStatus.NoResults -> SearchMessage(R.string.search_city_no_results, modifier)
+        is LocationSearchStatus.Failed -> SearchFailure(status.reason, onRetry, modifier)
+    }
+}
+
+@Composable
+private fun SearchResults(
+    locations: List<LocationUiModel>,
+    onLocationSelect: (LocationUiModel) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    WeatherCard(
+        modifier = modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(horizontal = AppTheme.dimensions.spaceL),
+        contentSpacing = AppTheme.dimensions.spaceXs,
+    ) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            itemsIndexed(locations) { index, location ->
+                LocationResultRow(location = location, onClick = { onLocationSelect(location) })
+                if (index != locations.lastIndex) {
                     HorizontalDivider(color = AppTheme.colors.cardBorder)
                 }
             }
-        LocationSearchStatus.NoResults -> SearchMessage(R.string.search_city_no_results, modifier)
-        is LocationSearchStatus.Failed ->
-            Column(
-                modifier = modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(AppTheme.dimensions.spaceL),
-            ) {
-                Text(
-                    text = stringResource(status.reason.messageRes),
-                    style = AppTheme.typography.bodyLarge,
-                    color = AppTheme.colors.textSecondary,
-                )
-                AppButton(text = stringResource(R.string.retry), onClick = onRetry)
-            }
+        }
+    }
+}
+
+@Composable
+private fun SearchFailure(
+    reason: WeatherErrorReason,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    WeatherCard(modifier = modifier.fillMaxWidth()) {
+        Text(
+            text = stringResource(reason.messageRes),
+            style = AppTheme.typography.bodyLarge,
+            color = AppTheme.colors.textSecondary,
+        )
+        AppButton(
+            text = stringResource(R.string.retry),
+            onClick = onRetry,
+            modifier = Modifier.fillMaxWidth(),
+        )
     }
 }
 
@@ -170,12 +199,16 @@ private fun SearchMessage(
     messageRes: Int,
     modifier: Modifier = Modifier,
 ) {
-    Text(
-        text = stringResource(messageRes),
+    WeatherCard(
         modifier = modifier.fillMaxWidth(),
-        style = AppTheme.typography.bodyLarge,
-        color = AppTheme.colors.textSecondary,
-    )
+        contentPadding = PaddingValues(AppTheme.dimensions.spaceL),
+    ) {
+        Text(
+            text = stringResource(messageRes),
+            style = AppTheme.typography.bodyLarge,
+            color = AppTheme.colors.textSecondary,
+        )
+    }
 }
 
 @Composable

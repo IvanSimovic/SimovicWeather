@@ -1,6 +1,7 @@
 package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppPreview
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.PreviewAppThemes
 import com.simovic.simovicweather.feature.weather.domain.model.Coordinates
@@ -39,6 +40,23 @@ private fun CitySearchLoadingPreview() {
 @PreviewAppThemes
 @Composable
 private fun CitySearchResultsPreview() {
+    CitySearchPreview(
+        LocationSearchUiState(
+            isVisible = true,
+            query = SAMPLE_QUERY,
+            status = LocationSearchStatus.Results(listOf(sampleLocationUiModel())),
+        ),
+    )
+}
+
+@Preview(
+    name = "Narrow search results",
+    widthDp = 320,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun NarrowCitySearchResultsPreview() {
     CitySearchPreview(
         LocationSearchUiState(
             isVisible = true,
