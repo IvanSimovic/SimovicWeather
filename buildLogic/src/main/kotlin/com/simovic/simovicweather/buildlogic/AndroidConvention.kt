@@ -18,6 +18,7 @@ fun ApplicationExtension.configureAndroid(projectVersions: org.gradle.accessors.
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         val javaVersion = JavaVersion.toVersion(projectVersions.java.get())
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion
@@ -38,6 +39,7 @@ fun LibraryExtension.configureAndroid(projectVersions: org.gradle.accessors.dm.L
     }
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         val javaVersion = JavaVersion.toVersion(projectVersions.java.get())
         sourceCompatibility = javaVersion
         targetCompatibility = javaVersion

@@ -4,12 +4,14 @@ import org.gradle.api.Project
 import org.gradle.api.artifacts.dsl.DependencyHandler
 
 private const val IMPLEMENTATION = "implementation"
+private const val CORE_LIBRARY_DESUGARING = "coreLibraryDesugaring"
 private const val DEBUG_IMPLEMENTATION = "debugImplementation"
 private const val TEST_IMPLEMENTATION = "testImplementation"
 private const val ANDROID_TEST_IMPLEMENTATION = "androidTestImplementation"
 
 fun DependencyHandler.addSharedDependencies(project: Project) {
     with(project) {
+        add(CORE_LIBRARY_DESUGARING, libs.desugar.jdk.libs)
         add(IMPLEMENTATION, libs.androidx.appcompat)
         add(IMPLEMENTATION, libs.androidx.core.ktx)
         add(IMPLEMENTATION, libs.material)

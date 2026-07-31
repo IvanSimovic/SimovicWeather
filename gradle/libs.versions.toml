@@ -6,6 +6,7 @@ composeBom = "2026.06.01"
 compileSdk = "37"
 coreKtx = "1.19.0"
 coroutines = "1.11.0"
+desugarJdkLibs = "2.1.5"
 java = "11"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -39,6 +40,7 @@ kotlin-gradlePlugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", ve
 spotless-gradlePlugin = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
 
 # Android
+desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
