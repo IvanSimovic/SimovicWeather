@@ -18,6 +18,8 @@ data class WeatherDimensions(
     val cardBorderWidth: Dp = 1.dp,
     val controlRadius: Dp = 16.dp,
     val controlHeight: Dp = 52.dp,
+    val iconSize: Dp = 24.dp,
+    val conditionArtworkSize: Dp = 96.dp,
 )
 
 internal val AppWeatherDimensions = WeatherDimensions()

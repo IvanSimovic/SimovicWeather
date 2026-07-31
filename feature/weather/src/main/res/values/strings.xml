@@ -11,7 +11,6 @@
     <string name="location_permission_search_fallback">Location access was not granted. You can still search for any city.</string>
     <string name="use_current_location">Use current location</string>
     <string name="retry">Retry</string>
-    <string name="current_conditions">Current conditions</string>
     <string name="feels_like">Feels like %1$s</string>
     <string name="high_low">High %1$s · Low %2$s</string>
     <string name="updated_at">Updated %1$s</string>

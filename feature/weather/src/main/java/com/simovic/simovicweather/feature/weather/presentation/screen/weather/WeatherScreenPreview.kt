@@ -1,6 +1,7 @@
 package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppPreview
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.PreviewAppThemes
 import com.simovic.simovicweather.feature.weather.R
@@ -21,6 +22,30 @@ private fun WeatherLoadingPreview() {
 @Composable
 private fun WeatherContentPreview() {
     WeatherPreview(uiState = WeatherUiState.Content(sampleWeather()))
+}
+
+@Preview(
+    name = "Narrow forecast",
+    widthDp = 320,
+    heightDp = 720,
+    showBackground = true,
+)
+@Composable
+private fun NarrowWeatherContentPreview() {
+    WeatherPreview(uiState = WeatherUiState.Content(sampleWeather()))
+}
+
+@PreviewAppThemes
+@Composable
+private fun LongLocationWeatherContentPreview() {
+    WeatherPreview(
+        uiState =
+            WeatherUiState.Content(
+                sampleWeather(
+                    locationName = "Llanfairpwllgwyngyll, Isle of Anglesey, United Kingdom",
+                ),
+            ),
+    )
 }
 
 @PreviewAppThemes
@@ -56,9 +81,9 @@ private fun WeatherPreview(uiState: WeatherUiState) {
     }
 }
 
-private fun sampleWeather() =
+private fun sampleWeather(locationName: String = "Sarajevo, Bosnia and Herzegovina") =
     WeatherUiModel(
-        locationName = "Sarajevo, Bosnia and Herzegovina",
+        locationName = locationName,
         updatedAt = "12:00 PM",
         current =
             CurrentWeatherUiModel(
