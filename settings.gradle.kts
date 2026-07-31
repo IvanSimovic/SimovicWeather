@@ -1,4 +1,6 @@
 pluginManagement {
+    includeBuild("buildLogic")
+
     repositories {
         google {
             content {
@@ -24,4 +26,6 @@ dependencyResolutionManagement {
 
 rootProject.name = "SimovicWeather"
 include(":app")
- 
+include(":feature:weather")
+
+enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
