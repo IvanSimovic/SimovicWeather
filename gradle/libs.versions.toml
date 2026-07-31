@@ -17,6 +17,13 @@ navigation = "2.9.5"
 playServicesLocation = "21.3.0"
 retrofit = "3.0.0"
 serialization = "1.11.0"
+spotless = "8.9.0"
+detekt = "1.23.8"
+
+# ktlint rules
+ktlint-ruleset-standard = "1.7.1"
+nlopez-compose-rules = "0.4.27"
+twitter-compose-rules = "0.0.26"
 
 [libraries]
 # Android
@@ -63,10 +70,17 @@ androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-co
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 
+# ktlint rules
+ktlint-ruleset-standard = { module = "com.pinterest.ktlint:ktlint-ruleset-standard", version.ref = "ktlint-ruleset-standard" }
+nlopez-compose-rules = { module = "io.nlopez.compose.rules:ktlint", version.ref = "nlopez-compose-rules" }
+twitter-compose-rules = { module = "com.twitter.compose.rules:ktlint", version.ref = "twitter-compose-rules" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }
 
 [bundles]
 compose = [
