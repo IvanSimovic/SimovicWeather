@@ -1,5 +1,6 @@
 package com.simovic.simovicweather.feature.weather.presentation
 
+import com.simovic.simovicweather.feature.weather.presentation.screen.weather.LocationSearchViewModel
 import com.simovic.simovicweather.feature.weather.presentation.screen.weather.WeatherDateFormatter
 import com.simovic.simovicweather.feature.weather.presentation.screen.weather.WeatherPresentationMapper
 import com.simovic.simovicweather.feature.weather.presentation.screen.weather.WeatherViewModel
@@ -11,5 +12,6 @@ internal val presentationModule =
     module {
         single { WeatherDateFormatter() }
         singleOf(::WeatherPresentationMapper)
+        viewModelOf(::LocationSearchViewModel)
         viewModelOf(::WeatherViewModel)
     }

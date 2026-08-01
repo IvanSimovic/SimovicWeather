@@ -1,5 +1,9 @@
 package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -8,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -18,15 +21,18 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppButton
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppSearchField
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.LoadingIndicator
@@ -34,9 +40,50 @@ import com.simovic.simovicweather.feature.base.presentation.compose.composable.W
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.WeatherCard
 import com.simovic.simovicweather.feature.base.presentation.ui.AppTheme
 import com.simovic.simovicweather.feature.weather.R
+import com.simovic.simovicweather.feature.weather.presentation.navigation.LocationSearchResult
+import org.koin.androidx.compose.koinViewModel
 
 @Composable
-internal fun CitySearchOverlay(
+fun LocationSearchScreen(
+    shouldRequestFocus: Boolean,
+    onClose: () -> Unit,
+    onResult: (LocationSearchResult) -> Unit,
+) {
+    val viewModel = koinViewModel<LocationSearchViewModel>()
+    val search by viewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val permissionLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            if (granted) {
+                onResult(LocationSearchResult.CurrentLocation)
+            } else {
+                viewModel.onLocationPermissionDenied()
+            }
+        }
+
+    LocationSearchContent(
+        search = search,
+        shouldRequestFocus = shouldRequestFocus,
+        onQueryChange = viewModel::onQueryChanged,
+        onSearchClear = { viewModel.onQueryChanged("") },
+        onSearchClose = onClose,
+        onRetry = viewModel::retry,
+        onLocationSelect = { onResult(it.toLocationSearchResult()) },
+        onUseCurrentLocation = {
+            val isGranted =
+                ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                    PackageManager.PERMISSION_GRANTED
+            if (isGranted) {
+                onResult(LocationSearchResult.CurrentLocation)
+            } else {
+                permissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+            }
+        },
+    )
+}
+
+@Composable
+internal fun LocationSearchContent(
     search: LocationSearchUiState,
     shouldRequestFocus: Boolean,
     onQueryChange: (String) -> Unit,
@@ -55,7 +102,6 @@ internal fun CitySearchOverlay(
                 Modifier
                     .fillMaxSize()
                     .safeDrawingPadding()
-                    .imePadding()
                     .padding(
                         horizontal = AppTheme.dimensions.screenPadding,
                         vertical = AppTheme.dimensions.spaceXxxl,
@@ -120,12 +166,9 @@ private fun SearchFieldFocusEffect(
     shouldRequestFocus: Boolean,
     focusRequester: FocusRequester,
 ) {
-    val keyboardController = LocalSoftwareKeyboardController.current
-
     LaunchedEffect(shouldRequestFocus) {
         if (shouldRequestFocus) {
             focusRequester.requestFocus()
-            keyboardController?.show()
         }
     }
 }

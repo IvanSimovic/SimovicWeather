@@ -10,7 +10,7 @@ import com.simovic.simovicweather.feature.weather.domain.model.WeatherLocation
 @PreviewAppThemes
 @Composable
 private fun CitySearchIdlePreview() {
-    CitySearchPreview(LocationSearchUiState(isVisible = true))
+    CitySearchPreview(LocationSearchUiState())
 }
 
 @PreviewAppThemes
@@ -18,7 +18,6 @@ private fun CitySearchIdlePreview() {
 private fun CitySearchShortQueryPreview() {
     CitySearchPreview(
         LocationSearchUiState(
-            isVisible = true,
             query = "Sa",
             status = LocationSearchStatus.QueryTooShort,
         ),
@@ -30,7 +29,6 @@ private fun CitySearchShortQueryPreview() {
 private fun CitySearchLoadingPreview() {
     CitySearchPreview(
         LocationSearchUiState(
-            isVisible = true,
             query = SAMPLE_QUERY,
             status = LocationSearchStatus.Searching,
         ),
@@ -42,7 +40,6 @@ private fun CitySearchLoadingPreview() {
 private fun CitySearchResultsPreview() {
     CitySearchPreview(
         LocationSearchUiState(
-            isVisible = true,
             query = SAMPLE_QUERY,
             status = LocationSearchStatus.Results(listOf(sampleLocationUiModel())),
         ),
@@ -59,7 +56,6 @@ private fun CitySearchResultsPreview() {
 private fun NarrowCitySearchResultsPreview() {
     CitySearchPreview(
         LocationSearchUiState(
-            isVisible = true,
             query = SAMPLE_QUERY,
             status = LocationSearchStatus.Results(listOf(sampleLocationUiModel())),
         ),
@@ -71,7 +67,6 @@ private fun NarrowCitySearchResultsPreview() {
 private fun CitySearchNoResultsPreview() {
     CitySearchPreview(
         LocationSearchUiState(
-            isVisible = true,
             query = "Missing",
             status = LocationSearchStatus.NoResults,
         ),
@@ -83,7 +78,6 @@ private fun CitySearchNoResultsPreview() {
 private fun CitySearchFailurePreview() {
     CitySearchPreview(
         LocationSearchUiState(
-            isVisible = true,
             query = SAMPLE_QUERY,
             status = LocationSearchStatus.Failed(WeatherErrorReason.NETWORK),
         ),
@@ -95,7 +89,6 @@ private fun CitySearchFailurePreview() {
 private fun CitySearchPermissionDeniedPreview() {
     CitySearchPreview(
         LocationSearchUiState(
-            isVisible = true,
             isLocationPermissionDenied = true,
         ),
     )
@@ -104,7 +97,7 @@ private fun CitySearchPermissionDeniedPreview() {
 @Composable
 private fun CitySearchPreview(search: LocationSearchUiState) {
     AppPreview {
-        CitySearchOverlay(
+        LocationSearchContent(
             search = search,
             shouldRequestFocus = false,
             onQueryChange = {},

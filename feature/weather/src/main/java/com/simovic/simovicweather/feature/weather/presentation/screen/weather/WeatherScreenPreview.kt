@@ -95,11 +95,6 @@ private fun WeatherPreview(
             onUseCurrentLocation = {},
             onRetry = {},
             onSearchOpen = {},
-            onSearchClose = {},
-            onSearchQueryChange = {},
-            onSearchClear = {},
-            onSearchRetry = {},
-            onLocationSelect = {},
             onRefresh = {},
         )
     }

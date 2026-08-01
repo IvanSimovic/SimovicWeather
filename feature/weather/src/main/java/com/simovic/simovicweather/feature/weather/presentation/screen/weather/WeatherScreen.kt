@@ -2,14 +2,6 @@ package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 
 import android.Manifest
 import android.content.pm.PackageManager
-import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.MutableTransitionState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -28,7 +20,11 @@ import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,44 +35,59 @@ import com.simovic.simovicweather.feature.base.presentation.compose.composable.L
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.WeatherBackground
 import com.simovic.simovicweather.feature.base.presentation.ui.AppTheme
 import com.simovic.simovicweather.feature.weather.R
+import com.simovic.simovicweather.feature.weather.presentation.navigation.LocationSearchResult
+import com.simovic.simovicweather.feature.weather.presentation.navigation.toWeatherLocation
 import org.koin.androidx.compose.koinViewModel
 
 @Composable
-fun WeatherScreen() {
+fun WeatherScreen(
+    locationSearchResult: LocationSearchResult?,
+    onConsumeLocationSearchResult: () -> Unit,
+    onRequestLocationSearch: () -> Unit,
+) {
     val viewModel = koinViewModel<WeatherViewModel>()
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val locationPermissionLauncher =
-        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            viewModel.onLocationPermissionRequestResult(granted)
-        }
+    var initialPermissionHandled by rememberSaveable { mutableStateOf(false) }
+    val currentOnConsumeLocationSearchResult by rememberUpdatedState(onConsumeLocationSearchResult)
+    val currentOnRequestLocationSearch by rememberUpdatedState(onRequestLocationSearch)
 
     LaunchedEffect(Unit) {
-        val isGranted =
-            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
-                PackageManager.PERMISSION_GRANTED
-        viewModel.onInitialLocationPermissionChecked(isGranted)
-    }
-
-    WeatherScreenContent(
-        uiState = uiState,
-        onUseCurrentLocation = {
+        if (!initialPermissionHandled) {
+            initialPermissionHandled = true
             val isGranted =
                 ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) ==
                     PackageManager.PERMISSION_GRANTED
             if (isGranted) {
                 viewModel.onCurrentLocationRequested()
             } else {
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                currentOnRequestLocationSearch()
             }
-        },
+        }
+    }
+
+    LaunchedEffect(locationSearchResult) {
+        when (locationSearchResult) {
+            null -> Unit
+            LocationSearchResult.CurrentLocation -> viewModel.onCurrentLocationRequested()
+            is LocationSearchResult.SelectedLocation ->
+                viewModel.onLocationSelected(locationSearchResult.toWeatherLocation())
+        }
+        if (locationSearchResult != null) currentOnConsumeLocationSearchResult()
+    }
+
+    LaunchedEffect(uiState.shouldOpenLocationSearch) {
+        if (uiState.shouldOpenLocationSearch) {
+            currentOnRequestLocationSearch()
+            viewModel.onLocationSearchRequestHandled()
+        }
+    }
+
+    WeatherScreenContent(
+        uiState = uiState,
+        onUseCurrentLocation = onRequestLocationSearch,
         onRetry = viewModel::retry,
-        onSearchOpen = viewModel::onSearchOpened,
-        onSearchClose = viewModel::onSearchClosed,
-        onSearchQueryChange = viewModel::onSearchQueryChanged,
-        onSearchClear = { viewModel.onSearchQueryChanged("") },
-        onSearchRetry = viewModel::retrySearch,
-        onLocationSelect = viewModel::onLocationSelected,
+        onSearchOpen = onRequestLocationSearch,
         onRefresh = viewModel::refresh,
     )
 }
@@ -87,22 +98,14 @@ internal fun WeatherScreenContent(
     onUseCurrentLocation: () -> Unit,
     onRetry: () -> Unit,
     onSearchOpen: () -> Unit,
-    onSearchClose: () -> Unit,
-    onSearchQueryChange: (String) -> Unit,
-    onSearchClear: () -> Unit,
-    onSearchRetry: () -> Unit,
-    onLocationSelect: (LocationUiModel) -> Unit,
     onRefresh: () -> Unit,
 ) {
-    val searchVisibilityState = remember { MutableTransitionState(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    searchVisibilityState.targetState = uiState.search.isVisible
     RefreshFeedbackEffect(
         refresh = uiState.refresh,
         snackbarHostState = snackbarHostState,
     )
 
-    BackHandler(enabled = uiState.search.isVisible, onBack = onSearchClose)
     WeatherBackground {
         Box(modifier = Modifier.fillMaxSize()) {
             when (val forecast = uiState.forecast) {
@@ -124,31 +127,6 @@ internal fun WeatherScreenContent(
                     )
             }
             RefreshSnackbarHost(snackbarHostState)
-            AnimatedVisibility(
-                visibleState = searchVisibilityState,
-                enter =
-                    expandVertically(
-                        animationSpec = tween(),
-                        expandFrom = Alignment.Top,
-                    ),
-                exit =
-                    shrinkVertically(
-                        animationSpec = tween(),
-                        shrinkTowards = Alignment.Top,
-                    ),
-            ) {
-                CitySearchOverlay(
-                    search = uiState.search,
-                    shouldRequestFocus =
-                        searchVisibilityState.currentState && searchVisibilityState.isIdle,
-                    onQueryChange = onSearchQueryChange,
-                    onSearchClear = onSearchClear,
-                    onSearchClose = onSearchClose,
-                    onRetry = onSearchRetry,
-                    onLocationSelect = onLocationSelect,
-                    onUseCurrentLocation = onUseCurrentLocation,
-                )
-            }
         }
     }
 }
@@ -172,15 +150,15 @@ private fun RefreshableWeatherContent(
     onRefresh: () -> Unit,
     onLocationClick: () -> Unit,
 ) {
-    val state = rememberPullToRefreshState()
+    val pullToRefreshState = rememberPullToRefreshState()
     PullToRefreshBox(
         isRefreshing = isRefreshing,
         onRefresh = onRefresh,
         modifier = Modifier.fillMaxSize(),
-        state = state,
+        state = pullToRefreshState,
         indicator = {
             PullToRefreshDefaults.Indicator(
-                state = state,
+                state = pullToRefreshState,
                 isRefreshing = isRefreshing,
                 modifier =
                     Modifier
@@ -202,9 +180,7 @@ private fun RefreshFeedbackEffect(
 ) {
     val message =
         when (refresh) {
-            RefreshUiState.Idle,
-            RefreshUiState.Refreshing,
-            -> return
+            RefreshUiState.Idle, RefreshUiState.Refreshing -> return
             is RefreshUiState.Failed -> stringResource(refresh.reason.messageRes)
             RefreshUiState.UpToDate -> stringResource(R.string.weather_already_up_to_date)
         }

@@ -1,6 +1,7 @@
 plugins {
     id("com.simovic.simovicweather.convention.feature")
     alias(libs.plugins.kotlin.serialization)
+    id("kotlin-parcelize")
 }
 
 android {
@@ -19,5 +20,6 @@ dependencies {
     implementation(libs.play.services.location)
     implementation(libs.coroutines.android)
     implementation(libs.coroutines.core)
+    implementation(libs.androidx.navigation.compose)
     testImplementation(libs.coroutines.test)
 }

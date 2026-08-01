@@ -6,8 +6,8 @@ import androidx.compose.runtime.Immutable
 internal data class WeatherScreenUiState(
     val target: ForecastTarget = ForecastTarget.CurrentLocation,
     val forecast: WeatherUiState = WeatherUiState.Initial,
-    val search: LocationSearchUiState = LocationSearchUiState(),
     val refresh: RefreshUiState = RefreshUiState.Idle,
+    val shouldOpenLocationSearch: Boolean = false,
 )
 
 @Immutable
@@ -46,33 +46,6 @@ internal sealed interface WeatherUiState {
         val reason: WeatherErrorReason,
         val canRetry: Boolean,
     ) : WeatherUiState
-}
-
-@Immutable
-internal data class LocationSearchUiState(
-    val isVisible: Boolean = false,
-    val query: String = "",
-    val status: LocationSearchStatus = LocationSearchStatus.Idle,
-    val isLocationPermissionDenied: Boolean = false,
-)
-
-@Immutable
-internal sealed interface LocationSearchStatus {
-    data object Idle : LocationSearchStatus
-
-    data object QueryTooShort : LocationSearchStatus
-
-    data object Searching : LocationSearchStatus
-
-    data class Results(
-        val locations: List<LocationUiModel>,
-    ) : LocationSearchStatus
-
-    data object NoResults : LocationSearchStatus
-
-    data class Failed(
-        val reason: WeatherErrorReason,
-    ) : LocationSearchStatus
 }
 
 internal enum class WeatherErrorReason {
