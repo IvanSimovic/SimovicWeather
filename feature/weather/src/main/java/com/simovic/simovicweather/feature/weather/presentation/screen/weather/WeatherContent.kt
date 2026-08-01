@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -24,7 +22,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppSearchField
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.WeatherCard
 import com.simovic.simovicweather.feature.base.presentation.ui.AppTheme
@@ -77,7 +75,7 @@ private fun CurrentWeatherHero(weather: WeatherUiModel) {
                 text = stringResource(R.string.temperature_celsius, current.temperatureCelsius),
                 style = AppTheme.typography.displayLarge,
             )
-            ConditionMarker(condition = current.condition, isHero = true)
+            ConditionMarker(condition = current.condition, size = ConditionMarkerSize.HERO)
         }
         Text(
             text = stringResource(current.condition.descriptionRes),
@@ -224,80 +222,107 @@ private fun DailyForecast(days: List<DailyWeatherUiModel>) {
 
 @Composable
 private fun DailyForecastRow(day: DailyWeatherUiModel) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = AppTheme.dimensions.spaceM),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            text = if (day.isToday) stringResource(R.string.today) else day.date,
-            modifier = Modifier.weight(1f),
-            style = AppTheme.typography.labelLarge,
-            maxLines = 1,
+    val maximumTemperature =
+        stringResource(R.string.temperature_celsius, day.maximumTemperatureCelsius)
+    val minimumTemperature =
+        stringResource(R.string.temperature_celsius, day.minimumTemperatureCelsius)
+    val precipitationProbability =
+        stringResource(R.string.precipitation_probability_percent, day.precipitationProbabilityPercent)
+    val date = if (day.isToday) stringResource(R.string.today) else day.date
+    val summary =
+        stringResource(
+            R.string.daily_forecast_summary,
+            date,
+            stringResource(day.condition.descriptionRes),
+            precipitationProbability,
+            maximumTemperature,
+            minimumTemperature,
         )
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clearAndSetSemantics { contentDescription = summary }
+                .padding(vertical = AppTheme.dimensions.spaceS),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AppTheme.dimensions.spaceS),
+    ) {
         ConditionMarker(
             condition = day.condition,
-            contentDescription = stringResource(day.condition.descriptionRes),
+            size = ConditionMarkerSize.FORECAST,
         )
-        Spacer(modifier = Modifier.width(AppTheme.dimensions.spaceS))
-        PrecipitationProbability(
-            value =
-                stringResource(
-                    R.string.precipitation_probability_percent,
-                    day.precipitationProbabilityPercent,
-                ),
-        )
-        Spacer(modifier = Modifier.width(AppTheme.dimensions.spaceS))
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(AppTheme.dimensions.spaceXs),
+        ) {
+            PrecipitationProbability(value = precipitationProbability)
+            Text(
+                text =
+                    stringResource(
+                        R.string.daily_temperature_range,
+                        maximumTemperature,
+                        minimumTemperature,
+                    ),
+                style = AppTheme.typography.labelLarge,
+            )
+        }
         Text(
-            text = stringResource(R.string.temperature_celsius, day.maximumTemperatureCelsius),
-            style = AppTheme.typography.labelLarge,
-        )
-        Spacer(modifier = Modifier.width(AppTheme.dimensions.spaceS))
-        Text(
-            text = stringResource(R.string.temperature_celsius, day.minimumTemperatureCelsius),
-            style = AppTheme.typography.labelLarge,
+            text = date,
+            style = AppTheme.typography.bodySmall,
             color = AppTheme.colors.textSecondary,
+            textAlign = TextAlign.End,
+            maxLines = 2,
         )
     }
 }
 
 @Composable
 private fun PrecipitationProbability(value: String) {
-    val description = stringResource(R.string.precipitation_chance, value)
-    Text(
-        text = value,
-        modifier = Modifier.semantics { contentDescription = description },
-        style = AppTheme.typography.bodySmall,
-        color = AppTheme.colors.rain,
-    )
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(AppTheme.dimensions.spaceXs),
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_precipitation),
+            contentDescription = null,
+            modifier = Modifier.size(AppTheme.dimensions.spaceL),
+            tint = AppTheme.colors.rain,
+        )
+        Text(
+            text = value,
+            style = AppTheme.typography.labelLarge,
+            color = AppTheme.colors.rain,
+        )
+    }
 }
 
 @Composable
 private fun ConditionMarker(
     condition: WeatherConditionUiModel,
-    isHero: Boolean = false,
-    contentDescription: String? = null,
+    size: ConditionMarkerSize,
 ) {
+    val isHero = size == ConditionMarkerSize.HERO
     Box(
         modifier =
             if (isHero) {
                 Modifier.size(AppTheme.dimensions.conditionArtworkSize)
             } else {
-                Modifier.size(AppTheme.dimensions.iconSize)
+                Modifier.size(AppTheme.dimensions.iconSizeLarge)
             },
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = stringResource(condition.icon.markerRes),
-            modifier =
-                Modifier.clearAndSetSemantics {
-                    if (contentDescription != null) {
-                        this.contentDescription = contentDescription
-                    }
-                },
-            style = if (isHero) AppTheme.typography.displayLarge else AppTheme.typography.titleMedium,
+            modifier = Modifier.clearAndSetSemantics {},
+            style = if (isHero) AppTheme.typography.displayLarge else AppTheme.typography.headlineLarge,
             color = condition.icon.markerColor,
         )
     }
+}
+
+private enum class ConditionMarkerSize {
+    HERO,
+    FORECAST,
 }
 
 private data class WeatherMetric(

@@ -20,13 +20,14 @@
     <string name="pressure">Pressure</string>
     <string name="seven_day_forecast">7-day forecast</string>
     <string name="today">Today</string>
-    <string name="precipitation_chance">Precipitation %1$s</string>
     <string name="temperature_celsius">%1$d°C</string>
     <string name="humidity_percent">%1$d%%</string>
     <string name="precipitation_millimeters">%1$.1f mm</string>
     <string name="pressure_hectopascals">%1$d hPa</string>
     <string name="wind_speed_kilometers_per_hour">%1$d km/h</string>
     <string name="precipitation_probability_percent">%1$d%%</string>
+    <string name="daily_temperature_range">H %1$s · L %2$s</string>
+    <string name="daily_forecast_summary">%1$s, %2$s, precipitation chance %3$s, high %4$s, low %5$s</string>
 
     <string name="weather_condition_clear">Clear sky</string>
     <string name="weather_condition_partly_cloudy">Partly cloudy</string>

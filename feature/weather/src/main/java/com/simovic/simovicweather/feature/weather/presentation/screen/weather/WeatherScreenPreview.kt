@@ -39,6 +39,13 @@ private fun WeatherRefreshingPreview() {
     heightDp = 720,
     showBackground = true,
 )
+@Preview(
+    name = "Large text forecast",
+    widthDp = 360,
+    heightDp = 800,
+    fontScale = 1.5f,
+    showBackground = true,
+)
 @Composable
 private fun NarrowWeatherContentPreview() {
     WeatherPreview(uiState = WeatherUiState.Content(sampleWeather()))

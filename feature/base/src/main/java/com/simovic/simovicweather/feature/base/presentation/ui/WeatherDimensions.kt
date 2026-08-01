@@ -19,6 +19,7 @@ data class WeatherDimensions(
     val controlRadius: Dp = 16.dp,
     val controlHeight: Dp = 52.dp,
     val iconSize: Dp = 24.dp,
+    val iconSizeLarge: Dp = 56.dp,
     val conditionArtworkSize: Dp = 96.dp,
 )
 

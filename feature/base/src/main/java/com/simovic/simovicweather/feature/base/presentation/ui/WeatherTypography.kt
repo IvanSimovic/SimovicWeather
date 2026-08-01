@@ -15,6 +15,13 @@ internal val AppTypography =
                 fontSize = 80.sp,
                 lineHeight = 84.sp,
             ),
+        headlineLarge =
+            TextStyle(
+                fontFamily = FontFamily.SansSerif,
+                fontWeight = FontWeight.Normal,
+                fontSize = 40.sp,
+                lineHeight = 48.sp,
+            ),
         headlineMedium =
             TextStyle(
                 fontFamily = FontFamily.SansSerif,
