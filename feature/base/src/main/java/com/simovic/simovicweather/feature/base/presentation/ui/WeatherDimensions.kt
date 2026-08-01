@@ -20,7 +20,7 @@ data class WeatherDimensions(
     val controlHeight: Dp = 52.dp,
     val iconSize: Dp = 24.dp,
     val iconSizeLarge: Dp = 56.dp,
-    val conditionArtworkSize: Dp = 96.dp,
+    val weatherHeroMinHeight: Dp = 280.dp,
 )
 
 internal val AppWeatherDimensions = WeatherDimensions()

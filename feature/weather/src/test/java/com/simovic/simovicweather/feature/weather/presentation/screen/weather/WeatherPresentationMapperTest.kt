@@ -111,6 +111,40 @@ class WeatherPresentationMapperTest {
     }
 
     @Test
+    fun `maps supported conditions to calm scenes below windy threshold`() {
+        assertEquals(WeatherScene.SUNNY, mapper.toUiModel(forecast(weatherCode = 2)).current.scene)
+        assertEquals(WeatherScene.RAIN, mapper.toUiModel(forecast(weatherCode = 61)).current.scene)
+    }
+
+    @Test
+    fun `maps sustained wind at threshold to windy scene`() {
+        val sunnyForecast = forecast(weatherCode = 2, windSpeed = 30.0)
+        val rainForecast = forecast(weatherCode = 61, windSpeed = 30.0)
+
+        assertEquals(WeatherScene.SUNNY_WINDY, mapper.toUiModel(sunnyForecast).current.scene)
+        assertEquals(WeatherScene.RAIN_WINDY, mapper.toUiModel(rainForecast).current.scene)
+    }
+
+    @Test
+    fun `keeps supported scenes calm below sustained wind threshold`() {
+        val forecast = forecast(weatherCode = 61, windSpeed = 29.9)
+
+        assertEquals(WeatherScene.RAIN, mapper.toUiModel(forecast).current.scene)
+    }
+
+    @Test
+    fun `unsupported conditions use non-windy sunny fallback`() {
+        listOf(45, 71, 500).forEach { weatherCode ->
+            val current =
+                mapper
+                    .toUiModel(forecast(weatherCode = weatherCode, windSpeed = 50.0))
+                    .current
+
+            assertEquals(WeatherScene.SUNNY, current.scene)
+        }
+    }
+
+    @Test
     fun `maps failures to weather error state with retryability`() {
         assertEquals(
             WeatherUiState.Error(reason = WeatherErrorReason.NETWORK, canRetry = true),
@@ -122,7 +156,10 @@ class WeatherPresentationMapperTest {
         )
     }
 
-    private fun forecast(weatherCode: Int = 1): WeatherForecast =
+    private fun forecast(
+        weatherCode: Int = 1,
+        windSpeed: Double = 10.6,
+    ): WeatherForecast =
         WeatherForecast(
             location = WeatherLocation(name = "Sarajevo", coordinates = Coordinates(43.85, 18.41)),
             current =
@@ -134,7 +171,7 @@ class WeatherPresentationMapperTest {
                     precipitation = 0.5,
                     weatherCode = weatherCode,
                     pressure = 1015.2,
-                    windSpeed = 10.6,
+                    windSpeed = windSpeed,
                 ),
             days = List(7, ::dailyWeather),
         )

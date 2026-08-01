@@ -33,83 +33,51 @@ internal fun WeatherContent(
     weather: WeatherUiModel,
     onLocationClick: () -> Unit,
 ) {
+    val heroArtwork = rememberWeatherHeroArtwork(weather.current.scene)
     LazyColumn(
         modifier = Modifier.fillMaxWidth().safeDrawingPadding(),
-        contentPadding =
-            PaddingValues(
-                horizontal = AppTheme.dimensions.screenPadding,
-                vertical = AppTheme.dimensions.spaceXxxl,
-            ),
+        contentPadding = PaddingValues(vertical = AppTheme.dimensions.spaceXxxl),
         verticalArrangement = Arrangement.spacedBy(AppTheme.dimensions.spaceL),
     ) {
         item {
-            AppSearchField(
-                value = weather.locationName.ifBlank { stringResource(R.string.current_location) },
-                onValueChange = {},
-                placeholder = stringResource(R.string.search_city),
-                onClear = null,
-                readOnly = true,
-                onClick = onLocationClick,
-                onClickLabel = stringResource(R.string.choose_location),
-            )
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppTheme.dimensions.screenPadding),
+            ) {
+                AppSearchField(
+                    value = weather.locationName.ifBlank { stringResource(R.string.current_location) },
+                    onValueChange = {},
+                    placeholder = stringResource(R.string.search_city),
+                    onClear = null,
+                    readOnly = true,
+                    onClick = onLocationClick,
+                    onClickLabel = stringResource(R.string.choose_location),
+                )
+            }
         }
-        item { CurrentWeatherHero(weather = weather) }
-        item { WeatherDetails(current = weather.current) }
-        item { DailyForecast(days = weather.days) }
-    }
-}
-
-@Composable
-private fun CurrentWeatherHero(weather: WeatherUiModel) {
-    val current = weather.current
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(AppTheme.dimensions.spaceS),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = stringResource(R.string.temperature_celsius, current.temperatureCelsius),
-                style = AppTheme.typography.displayLarge,
-            )
-            ConditionMarker(condition = current.condition, size = ConditionMarkerSize.HERO)
+        item { CurrentWeatherHero(weather = weather, artwork = heroArtwork) }
+        item {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppTheme.dimensions.screenPadding),
+            ) {
+                WeatherDetails(current = weather.current)
+            }
         }
-        Text(
-            text = stringResource(current.condition.descriptionRes),
-            style = AppTheme.typography.titleMedium,
-        )
-        val apparentTemperature =
-            stringResource(R.string.temperature_celsius, current.apparentTemperatureCelsius)
-        Text(
-            text = stringResource(R.string.feels_like, apparentTemperature),
-            style = AppTheme.typography.bodyLarge,
-        )
-        TodayTemperatureRange(weather)
-        Text(
-            text = stringResource(R.string.updated_at, weather.updatedAt),
-            style = AppTheme.typography.bodySmall,
-            color = AppTheme.colors.textSecondary,
-        )
-    }
-}
-
-@Composable
-private fun TodayTemperatureRange(weather: WeatherUiModel) {
-    val minimum = weather.todayMinimumTemperatureCelsius
-    val maximum = weather.todayMaximumTemperatureCelsius
-    if (minimum != null && maximum != null) {
-        Text(
-            text =
-                stringResource(
-                    R.string.high_low,
-                    stringResource(R.string.temperature_celsius, maximum),
-                    stringResource(R.string.temperature_celsius, minimum),
-                ),
-            style = AppTheme.typography.bodyLarge,
-        )
+        item {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = AppTheme.dimensions.screenPadding),
+            ) {
+                DailyForecast(days = weather.days)
+            }
+        }
     }
 }
 
@@ -249,7 +217,6 @@ private fun DailyForecastRow(day: DailyWeatherUiModel) {
     ) {
         ConditionMarker(
             condition = day.condition,
-            size = ConditionMarkerSize.FORECAST,
         )
         Column(
             modifier = Modifier.weight(1f),
@@ -297,32 +264,18 @@ private fun PrecipitationProbability(value: String) {
 }
 
 @Composable
-private fun ConditionMarker(
-    condition: WeatherConditionUiModel,
-    size: ConditionMarkerSize,
-) {
-    val isHero = size == ConditionMarkerSize.HERO
+private fun ConditionMarker(condition: WeatherConditionUiModel) {
     Box(
-        modifier =
-            if (isHero) {
-                Modifier.size(AppTheme.dimensions.conditionArtworkSize)
-            } else {
-                Modifier.size(AppTheme.dimensions.iconSizeLarge)
-            },
+        modifier = Modifier.size(AppTheme.dimensions.iconSizeLarge),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             text = stringResource(condition.icon.markerRes),
             modifier = Modifier.clearAndSetSemantics {},
-            style = if (isHero) AppTheme.typography.displayLarge else AppTheme.typography.headlineLarge,
+            style = AppTheme.typography.headlineLarge,
             color = condition.icon.markerColor,
         )
     }
-}
-
-private enum class ConditionMarkerSize {
-    HERO,
-    FORECAST,
 }
 
 private data class WeatherMetric(

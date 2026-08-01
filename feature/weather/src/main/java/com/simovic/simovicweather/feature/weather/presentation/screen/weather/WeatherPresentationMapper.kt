@@ -12,6 +12,7 @@ internal class WeatherPresentationMapper(
     fun toUiModel(forecast: WeatherForecast): WeatherUiModel {
         val current = forecast.current
         val today = forecast.days.firstOrNull()
+        val currentCondition = condition(current.weatherCode)
         return WeatherUiModel(
             locationName = locationLabel(forecast.location),
             updatedAt = dateFormatter.formatTime(current.time),
@@ -20,7 +21,8 @@ internal class WeatherPresentationMapper(
                     temperatureCelsius = current.temperature.roundToInt(),
                     apparentTemperatureCelsius = current.apparentTemperature.roundToInt(),
                     humidityPercent = current.humidity,
-                    condition = condition(current.weatherCode),
+                    condition = currentCondition,
+                    scene = scene(currentCondition.icon, current.windSpeed),
                     precipitationMillimeters = current.precipitation,
                     pressureHectopascals = current.pressure.roundToInt(),
                     windSpeedKilometersPerHour = current.windSpeed.roundToInt(),
@@ -90,6 +92,27 @@ internal class WeatherPresentationMapper(
             else -> WeatherConditionUiModel(R.string.weather_condition_unknown, WeatherIcon.UNKNOWN)
         }
 
+    private fun scene(
+        icon: WeatherIcon,
+        windSpeed: Double,
+    ): WeatherScene {
+        val isWindy = windSpeed >= WINDY_THRESHOLD_KMH
+        return when (icon) {
+            WeatherIcon.CLEAR,
+            WeatherIcon.PARTLY_CLOUDY,
+            WeatherIcon.CLOUDY,
+            -> if (isWindy) WeatherScene.SUNNY_WINDY else WeatherScene.SUNNY
+            WeatherIcon.RAIN,
+            WeatherIcon.FREEZING_RAIN,
+            WeatherIcon.THUNDERSTORM,
+            -> if (isWindy) WeatherScene.RAIN_WINDY else WeatherScene.RAIN
+            WeatherIcon.FOG,
+            WeatherIcon.SNOW,
+            WeatherIcon.UNKNOWN,
+            -> WeatherScene.SUNNY
+        }
+    }
+
     private companion object {
         const val CODE_CLEAR = 0
         const val CODE_PARTLY_CLOUDY_START = 1
@@ -113,5 +136,6 @@ internal class WeatherPresentationMapper(
         const val CODE_SNOW_SHOWER_END = 86
         const val CODE_THUNDERSTORM_START = 95
         const val CODE_THUNDERSTORM_END = 99
+        const val WINDY_THRESHOLD_KMH = 30.0
     }
 }

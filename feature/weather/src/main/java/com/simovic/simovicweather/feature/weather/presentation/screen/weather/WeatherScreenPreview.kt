@@ -2,6 +2,8 @@ package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.tooling.preview.PreviewParameter
+import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.AppPreview
 import com.simovic.simovicweather.feature.base.presentation.compose.composable.PreviewAppThemes
 import com.simovic.simovicweather.feature.weather.R
@@ -20,8 +22,10 @@ private fun WeatherLoadingPreview() {
 
 @PreviewAppThemes
 @Composable
-private fun WeatherContentPreview() {
-    WeatherPreview(uiState = WeatherUiState.Content(sampleWeather()))
+private fun WeatherContentPreview(
+    @PreviewParameter(WeatherScenePreviewProvider::class) scene: WeatherScene,
+) {
+    WeatherPreview(uiState = WeatherUiState.Content(sampleWeather(scene = scene)))
 }
 
 @PreviewAppThemes
@@ -101,37 +105,44 @@ private fun WeatherPreview(
     }
 }
 
-private fun sampleWeather(locationName: String = "Sarajevo, Bosnia and Herzegovina") =
-    WeatherUiModel(
-        locationName = locationName,
-        updatedAt = "12:00 PM",
-        current =
-            CurrentWeatherUiModel(
-                temperatureCelsius = 23,
-                apparentTemperatureCelsius = 24,
-                humidityPercent = 55,
-                condition = WeatherConditionUiModel(R.string.weather_condition_partly_cloudy, WeatherIcon.PARTLY_CLOUDY),
-                precipitationMillimeters = 0.5,
-                pressureHectopascals = 1015,
-                windSpeedKilometersPerHour = 11,
-            ),
-        todayMinimumTemperatureCelsius = 15,
-        todayMaximumTemperatureCelsius = 25,
-        days =
-            List(SAMPLE_FORECAST_DAY_COUNT) { index ->
-                DailyWeatherUiModel(
-                    date = "Sat, Aug ${index + 1}",
-                    isToday = index == 0,
-                    minimumTemperatureCelsius = 15 + index,
-                    maximumTemperatureCelsius = 25 + index,
-                    precipitationProbabilityPercent = 10,
-                    condition =
-                        WeatherConditionUiModel(
-                            R.string.weather_condition_partly_cloudy,
-                            WeatherIcon.PARTLY_CLOUDY,
-                        ),
-                )
-            },
-    )
+private fun sampleWeather(
+    locationName: String = "Sarajevo, Bosnia and Herzegovina",
+    scene: WeatherScene = WeatherScene.SUNNY,
+) = WeatherUiModel(
+    locationName = locationName,
+    updatedAt = "12:00 PM",
+    current =
+        CurrentWeatherUiModel(
+            temperatureCelsius = 23,
+            apparentTemperatureCelsius = 24,
+            humidityPercent = 55,
+            condition = WeatherConditionUiModel(R.string.weather_condition_partly_cloudy, WeatherIcon.PARTLY_CLOUDY),
+            scene = scene,
+            precipitationMillimeters = 0.5,
+            pressureHectopascals = 1015,
+            windSpeedKilometersPerHour = 11,
+        ),
+    todayMinimumTemperatureCelsius = 15,
+    todayMaximumTemperatureCelsius = 25,
+    days =
+        List(SAMPLE_FORECAST_DAY_COUNT) { index ->
+            DailyWeatherUiModel(
+                date = "Sat, Aug ${index + 1}",
+                isToday = index == 0,
+                minimumTemperatureCelsius = 15 + index,
+                maximumTemperatureCelsius = 25 + index,
+                precipitationProbabilityPercent = 10,
+                condition =
+                    WeatherConditionUiModel(
+                        R.string.weather_condition_partly_cloudy,
+                        WeatherIcon.PARTLY_CLOUDY,
+                    ),
+            )
+        },
+)
 
 private const val SAMPLE_FORECAST_DAY_COUNT = 7
+
+private class WeatherScenePreviewProvider : PreviewParameterProvider<WeatherScene> {
+    override val values = sequenceOf(WeatherScene.SUNNY, WeatherScene.RAIN, WeatherScene.RAIN_WINDY)
+}

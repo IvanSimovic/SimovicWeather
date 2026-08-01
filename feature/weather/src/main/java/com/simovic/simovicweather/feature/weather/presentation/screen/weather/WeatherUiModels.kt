@@ -20,6 +20,7 @@ internal data class CurrentWeatherUiModel(
     val apparentTemperatureCelsius: Int,
     val humidityPercent: Int,
     val condition: WeatherConditionUiModel,
+    val scene: WeatherScene,
     val precipitationMillimeters: Double,
     val pressureHectopascals: Int,
     val windSpeedKilometersPerHour: Int,
@@ -57,4 +58,11 @@ internal enum class WeatherIcon {
     SNOW,
     THUNDERSTORM,
     UNKNOWN,
+}
+
+internal enum class WeatherScene {
+    SUNNY,
+    SUNNY_WINDY,
+    RAIN,
+    RAIN_WINDY,
 }
