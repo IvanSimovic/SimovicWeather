@@ -15,4 +15,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.retrofit.core)
+    implementation(libs.coroutines.play.services)
+    implementation(libs.play.services.location)
 }
