@@ -19,6 +19,10 @@ internal sealed interface WeatherUiState {
         override val search: SearchUiState = SearchUiState.Idle,
     ) : WeatherUiState
 
+    data class PermissionRequired(
+        override val search: SearchUiState = SearchUiState.Idle,
+    ) : WeatherUiState
+
     data class Error(
         val reason: WeatherErrorReason,
         val canRetry: Boolean,

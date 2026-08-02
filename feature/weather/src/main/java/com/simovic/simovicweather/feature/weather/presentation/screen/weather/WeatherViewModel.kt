@@ -64,7 +64,9 @@ internal class WeatherViewModel(
         }
     }
 
-    fun loadCurrentLocation() = load(getCurrentWeather::invoke)
+    fun onLocationPermissionResult(granted: Boolean) {
+        if (granted) loadCurrentLocation() else mutableUiState.value = WeatherUiState.PermissionRequired()
+    }
 
     fun onSearchQueryChanged(query: String) {
         searchQuery.value = query
@@ -78,6 +80,8 @@ internal class WeatherViewModel(
     fun retry() = load(lastLoad)
 
     fun refresh() = retry()
+
+    private fun loadCurrentLocation() = load(getCurrentWeather::invoke)
 
     private fun load(block: suspend () -> Result<WeatherForecast>) {
         lastLoad = block
@@ -93,11 +97,15 @@ internal class WeatherViewModel(
     }
 
     private fun AppFailure.toUiState(search: SearchUiState): WeatherUiState =
-        WeatherUiState.Error(
-            reason = presentationMapper.toError(this),
-            canRetry = this !is AppFailure.MalformedData,
-            search = search,
-        )
+        if (this == AppFailure.PermissionDenied) {
+            WeatherUiState.PermissionRequired(search)
+        } else {
+            WeatherUiState.Error(
+                reason = presentationMapper.toError(this),
+                canRetry = this !is AppFailure.MalformedData,
+                search = search,
+            )
+        }
 
     private fun updateSearch(search: SearchUiState) {
         mutableUiState.value =
@@ -105,6 +113,7 @@ internal class WeatherViewModel(
                 is WeatherUiState.Initial -> state.copy(search = search)
                 is WeatherUiState.Loading -> state.copy(search = search)
                 is WeatherUiState.Content -> state.copy(search = search)
+                is WeatherUiState.PermissionRequired -> state.copy(search = search)
                 is WeatherUiState.Error -> state.copy(search = search)
             }
     }
