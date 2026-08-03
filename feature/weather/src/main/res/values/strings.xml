@@ -1,5 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="current_location">Current location</string>
     <string name="location_permission_explanation">Allow approximate location access to show weather near you.</string>
     <string name="use_current_location">Use current location</string>
+    <string name="current_conditions">Current conditions</string>
+    <string name="feels_like">Feels like %1$s</string>
+    <string name="high_low">High %1$s · Low %2$s</string>
+    <string name="updated_at">Updated %1$s</string>
+    <string name="humidity">Humidity</string>
+    <string name="wind">Wind</string>
+    <string name="precipitation">Precipitation</string>
+    <string name="pressure">Pressure</string>
+    <string name="seven_day_forecast">7-day forecast</string>
+    <string name="today">Today</string>
+    <string name="precipitation_chance">Precipitation %1$s</string>
+    <string name="temperature_celsius">%1$d°C</string>
+    <string name="humidity_percent">%1$d%%</string>
+    <string name="precipitation_millimeters">%1$.1f mm</string>
+    <string name="pressure_hectopascals">%1$d hPa</string>
+    <string name="wind_speed_kilometers_per_hour">%1$d km/h</string>
+    <string name="precipitation_probability_percent">%1$d%%</string>
+
+    <string name="weather_condition_clear">Clear sky</string>
+    <string name="weather_condition_partly_cloudy">Partly cloudy</string>
+    <string name="weather_condition_overcast">Overcast</string>
+    <string name="weather_condition_fog">Fog</string>
+    <string name="weather_condition_rain">Rain</string>
+    <string name="weather_condition_freezing_rain">Freezing rain</string>
+    <string name="weather_condition_snow">Snow</string>
+    <string name="weather_condition_thunderstorm">Thunderstorm</string>
+    <string name="weather_condition_unknown">Unknown</string>
+
+    <string name="weather_marker_clear">☀</string>
+    <string name="weather_marker_cloudy">☁</string>
+    <string name="weather_marker_fog">≋</string>
+    <string name="weather_marker_rain">☂</string>
+    <string name="weather_marker_snow">❄</string>
+    <string name="weather_marker_thunderstorm">ϟ</string>
+    <string name="weather_marker_unknown">?</string>
+
 </resources>

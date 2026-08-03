@@ -1,6 +1,7 @@
 package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 
 import com.simovic.simovicweather.feature.base.domain.result.AppFailure
+import com.simovic.simovicweather.feature.weather.R
 import com.simovic.simovicweather.feature.weather.domain.model.WeatherForecast
 import com.simovic.simovicweather.feature.weather.domain.model.WeatherLocation
 import kotlin.math.roundToInt
@@ -10,11 +11,12 @@ internal class WeatherPresentationMapper(
 ) {
     fun toUiModel(forecast: WeatherForecast): WeatherUiModel {
         val current = forecast.current
+        val today = forecast.days.firstOrNull()
         return WeatherUiModel(
             locationName = locationLabel(forecast.location),
+            updatedAt = dateFormatter.formatTime(current.time),
             current =
                 CurrentWeatherUiModel(
-                    time = dateFormatter.formatTime(current.time),
                     temperatureCelsius = current.temperature.roundToInt(),
                     apparentTemperatureCelsius = current.apparentTemperature.roundToInt(),
                     humidityPercent = current.humidity,
@@ -23,10 +25,13 @@ internal class WeatherPresentationMapper(
                     pressureHectopascals = current.pressure.roundToInt(),
                     windSpeedKilometersPerHour = current.windSpeed.roundToInt(),
                 ),
+            todayMinimumTemperatureCelsius = today?.minTemperature?.roundToInt(),
+            todayMaximumTemperatureCelsius = today?.maxTemperature?.roundToInt(),
             days =
-                forecast.days.map { day ->
+                forecast.days.mapIndexed { index, day ->
                     DailyWeatherUiModel(
                         date = dateFormatter.formatDate(day.date),
+                        isToday = index == 0,
                         minimumTemperatureCelsius = day.minTemperature.roundToInt(),
                         maximumTemperatureCelsius = day.maxTemperature.roundToInt(),
                         precipitationProbabilityPercent = day.precipitationProbability,
@@ -51,7 +56,7 @@ internal class WeatherPresentationMapper(
         }
 
     private fun locationLabel(location: WeatherLocation): String =
-        listOf(location.name.ifBlank { "Current location" }, location.region, location.country)
+        listOf(location.name, location.region, location.country)
             .filterNotNull()
             .filter(String::isNotBlank)
             .distinct()
@@ -59,24 +64,24 @@ internal class WeatherPresentationMapper(
 
     private fun condition(code: Int): WeatherConditionUiModel =
         when (code) {
-            CODE_CLEAR -> WeatherConditionUiModel("Clear sky", WeatherIcon.CLEAR)
+            CODE_CLEAR -> WeatherConditionUiModel(R.string.weather_condition_clear, WeatherIcon.CLEAR)
             in CODE_PARTLY_CLOUDY_START..CODE_PARTLY_CLOUDY_END ->
-                WeatherConditionUiModel("Partly cloudy", WeatherIcon.PARTLY_CLOUDY)
-            CODE_OVERCAST -> WeatherConditionUiModel("Overcast", WeatherIcon.CLOUDY)
-            CODE_FOG, CODE_RIME_FOG -> WeatherConditionUiModel("Fog", WeatherIcon.FOG)
+                WeatherConditionUiModel(R.string.weather_condition_partly_cloudy, WeatherIcon.PARTLY_CLOUDY)
+            CODE_OVERCAST -> WeatherConditionUiModel(R.string.weather_condition_overcast, WeatherIcon.CLOUDY)
+            CODE_FOG, CODE_RIME_FOG -> WeatherConditionUiModel(R.string.weather_condition_fog, WeatherIcon.FOG)
             in CODE_FREEZING_DRIZZLE_START..CODE_FREEZING_DRIZZLE_END,
             in CODE_FREEZING_RAIN_START..CODE_FREEZING_RAIN_END,
-            -> WeatherConditionUiModel("Freezing rain", WeatherIcon.FREEZING_RAIN)
+            -> WeatherConditionUiModel(R.string.weather_condition_freezing_rain, WeatherIcon.FREEZING_RAIN)
             in CODE_DRIZZLE_START..CODE_DRIZZLE_END,
             in CODE_RAIN_START..CODE_RAIN_END,
             in CODE_SHOWER_START..CODE_SHOWER_END,
-            -> WeatherConditionUiModel("Rain", WeatherIcon.RAIN)
+            -> WeatherConditionUiModel(R.string.weather_condition_rain, WeatherIcon.RAIN)
             in CODE_SNOW_START..CODE_SNOW_END,
             in CODE_SNOW_SHOWER_START..CODE_SNOW_SHOWER_END,
-            -> WeatherConditionUiModel("Snow", WeatherIcon.SNOW)
+            -> WeatherConditionUiModel(R.string.weather_condition_snow, WeatherIcon.SNOW)
             in CODE_THUNDERSTORM_START..CODE_THUNDERSTORM_END ->
-                WeatherConditionUiModel("Thunderstorm", WeatherIcon.THUNDERSTORM)
-            else -> WeatherConditionUiModel("Unknown", WeatherIcon.UNKNOWN)
+                WeatherConditionUiModel(R.string.weather_condition_thunderstorm, WeatherIcon.THUNDERSTORM)
+            else -> WeatherConditionUiModel(R.string.weather_condition_unknown, WeatherIcon.UNKNOWN)
         }
 
     private companion object {

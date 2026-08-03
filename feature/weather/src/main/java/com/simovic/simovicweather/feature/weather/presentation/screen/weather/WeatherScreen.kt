@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.simovic.simovicweather.feature.base.presentation.compose.composable.WeatherBackground
 import com.simovic.simovicweather.feature.weather.R
 import org.koin.androidx.compose.koinViewModel
 
@@ -51,6 +52,13 @@ private fun WeatherScreenContent(
     uiState: WeatherUiState,
     onUseCurrentLocation: () -> Unit,
 ) {
+    if (uiState is WeatherUiState.Content) {
+        WeatherBackground {
+            WeatherContent(weather = uiState.weather)
+        }
+        return
+    }
+
     if (uiState !is WeatherUiState.Initial && uiState !is WeatherUiState.PermissionRequired) return
 
     Column(

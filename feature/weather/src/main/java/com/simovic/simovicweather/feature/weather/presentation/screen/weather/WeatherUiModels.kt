@@ -1,18 +1,21 @@
 package com.simovic.simovicweather.feature.weather.presentation.screen.weather
 
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Immutable
 import com.simovic.simovicweather.feature.weather.domain.model.WeatherLocation
 
 @Immutable
 internal data class WeatherUiModel(
     val locationName: String,
+    val updatedAt: String,
     val current: CurrentWeatherUiModel,
+    val todayMinimumTemperatureCelsius: Int?,
+    val todayMaximumTemperatureCelsius: Int?,
     val days: List<DailyWeatherUiModel>,
 )
 
 @Immutable
 internal data class CurrentWeatherUiModel(
-    val time: String,
     val temperatureCelsius: Int,
     val apparentTemperatureCelsius: Int,
     val humidityPercent: Int,
@@ -25,6 +28,7 @@ internal data class CurrentWeatherUiModel(
 @Immutable
 internal data class DailyWeatherUiModel(
     val date: String,
+    val isToday: Boolean,
     val minimumTemperatureCelsius: Int,
     val maximumTemperatureCelsius: Int,
     val precipitationProbabilityPercent: Int,
@@ -39,7 +43,7 @@ internal data class LocationUiModel(
 
 @Immutable
 internal data class WeatherConditionUiModel(
-    val description: String,
+    @get:StringRes val descriptionRes: Int,
     val icon: WeatherIcon,
 )
 
