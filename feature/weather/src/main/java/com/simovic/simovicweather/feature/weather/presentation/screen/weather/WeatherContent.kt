@@ -14,10 +14,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -78,8 +80,25 @@ internal fun WeatherContent(
                 DailyForecast(days = weather.days)
             }
         }
+        item { WeatherDataAttribution() }
     }
 }
+
+@Composable
+private fun WeatherDataAttribution() {
+    val uriHandler = LocalUriHandler.current
+    TextButton(
+        onClick = { uriHandler.openUri(OPEN_METEO_URL) },
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = AppTheme.dimensions.screenPadding),
+    ) {
+        Text(text = stringResource(R.string.weather_data_attribution))
+    }
+}
+
+private const val OPEN_METEO_URL = "https://open-meteo.com/"
 
 @Composable
 private fun WeatherDetails(current: CurrentWeatherUiModel) {
