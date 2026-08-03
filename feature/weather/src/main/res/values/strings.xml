@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="weather_near_you">Weather near you</string>
+    <string name="weather_near_you_explanation">Use your approximate location to see current and weekly weather.</string>
     <string name="current_location">Current location</string>
-    <string name="location_permission_explanation">Allow approximate location access to show weather near you.</string>
+    <string name="location_access_needed">Location access needed</string>
+    <string name="location_permission_explanation">Approximate location is enough to show weather near you.</string>
     <string name="use_current_location">Use current location</string>
+    <string name="allow_location_access">Allow location access</string>
+    <string name="retry">Retry</string>
     <string name="current_conditions">Current conditions</string>
     <string name="feels_like">Feels like %1$s</string>
     <string name="high_low">High %1$s · Low %2$s</string>
@@ -39,4 +44,11 @@
     <string name="weather_marker_thunderstorm">ϟ</string>
     <string name="weather_marker_unknown">?</string>
 
+    <string name="weather_error_title">Unable to load weather</string>
+    <string name="weather_error_network">Check your internet connection and try again.</string>
+    <string name="weather_error_rate_limited">Too many requests. Please try again shortly.</string>
+    <string name="weather_error_location_unavailable">We couldn’t determine your current location.</string>
+    <string name="weather_error_malformed_data">Weather data is currently unavailable.</string>
+    <string name="weather_error_server">The weather service is unavailable. Please try again.</string>
+    <string name="weather_error_unknown">Something went wrong. Please try again.</string>
 </resources>
