@@ -1,9 +1,14 @@
 plugins {
     id("com.simovic.simovicweather.convention.application")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
     namespace = "com.simovic.simovicweather"
+
+    buildFeatures {
+        buildConfig = true
+    }
 
     defaultConfig {
         applicationId = "com.simovic.simovicweather"
@@ -26,4 +31,5 @@ dependencies {
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.bundles.networking)
 }

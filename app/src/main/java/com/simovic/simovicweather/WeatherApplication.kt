@@ -11,6 +11,7 @@ class WeatherApplication : Application() {
 
         startKoin {
             androidContext(this@WeatherApplication)
+            modules(appModule)
             modules(featureWeatherModules)
         }
     }

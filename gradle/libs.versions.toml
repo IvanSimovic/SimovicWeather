@@ -18,6 +18,7 @@ material = "1.14.0"
 minSdk = "24"
 navigation = "2.9.5"
 playServicesLocation = "21.3.0"
+okhttp = "4.12.0"
 retrofit = "3.0.0"
 serialization = "1.11.0"
 spotless = "8.9.0"
@@ -73,6 +74,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 # Networking
 retrofit-core = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 retrofit-kotlinx-serialization = { module = "com.squareup.retrofit2:converter-kotlinx-serialization", version.ref = "retrofit" }
+okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
 
 # Location
 play-services-location = { module = "com.google.android.gms:play-services-location", version.ref = "playServicesLocation" }
@@ -119,4 +121,5 @@ networking = [
     "kotlinx-serialization-json",
     "retrofit-core",
     "retrofit-kotlinx-serialization",
+    "okhttp-logging",
 ]
