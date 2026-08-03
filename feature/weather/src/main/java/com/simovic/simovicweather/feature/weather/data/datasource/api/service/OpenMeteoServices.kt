@@ -2,6 +2,7 @@ package com.simovic.simovicweather.feature.weather.data.datasource.api.service
 
 import com.simovic.simovicweather.feature.base.data.retrofit.apiresult.ApiResult
 import com.simovic.simovicweather.feature.weather.data.datasource.api.model.ForecastResponse
+import com.simovic.simovicweather.feature.weather.data.datasource.api.model.GeocodingResponse
 import retrofit2.http.GET
 import retrofit2.http.Query
 
@@ -25,4 +26,14 @@ internal interface WeatherRetrofitService {
         @Query("longitude") longitude: Double,
         @retrofit2.http.QueryMap options: Map<String, String> = FORECAST_OPTIONS,
     ): ApiResult<ForecastResponse>
+}
+
+internal interface GeocodingRetrofitService {
+    @GET("v1/search")
+    suspend fun search(
+        @Query("name") query: String,
+        @Query("count") count: Int = 5,
+        @Query("language") language: String,
+        @Query("format") format: String = "json",
+    ): ApiResult<GeocodingResponse>
 }
