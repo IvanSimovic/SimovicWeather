@@ -17,4 +17,6 @@ dependencies {
     implementation(libs.retrofit.core)
     implementation(libs.coroutines.play.services)
     implementation(libs.play.services.location)
+    implementation(libs.coroutines.android)
+    implementation(libs.coroutines.core)
 }
