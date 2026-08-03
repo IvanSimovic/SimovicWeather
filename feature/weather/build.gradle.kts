@@ -1,5 +1,6 @@
 plugins {
     id("com.simovic.simovicweather.convention.feature")
+    alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -12,4 +13,6 @@ dependencies {
     implementation(libs.koin.core)
     implementation(libs.koin.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.kotlinx.serialization.json)
+    implementation(libs.retrofit.core)
 }
