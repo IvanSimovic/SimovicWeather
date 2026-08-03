@@ -32,4 +32,5 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.bundles.networking)
+    implementation(libs.androidx.core.splashscreen)
 }

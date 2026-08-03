@@ -5,6 +5,7 @@ buildLogicJava = "17"
 composeBom = "2026.06.01"
 compileSdk = "37"
 coreKtx = "1.19.0"
+coreSplashscreen = "1.2.0"
 coroutines = "1.11.0"
 desugarJdkLibs = "2.1.5"
 java = "11"
@@ -43,6 +44,7 @@ spotless-gradlePlugin = { module = "com.diffplug.spotless:spotless-plugin-gradle
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "coreSplashscreen" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 
 # Compose
