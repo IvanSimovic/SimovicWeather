@@ -4,9 +4,19 @@ import androidx.compose.runtime.Immutable
 
 @Immutable
 internal data class WeatherScreenUiState(
+    val target: ForecastTarget = ForecastTarget.CurrentLocation,
     val forecast: WeatherUiState = WeatherUiState.Initial,
     val search: LocationSearchUiState = LocationSearchUiState(),
 )
+
+@Immutable
+internal sealed interface ForecastTarget {
+    data object CurrentLocation : ForecastTarget
+
+    data class SelectedLocation(
+        val location: LocationUiModel,
+    ) : ForecastTarget
+}
 
 @Immutable
 internal sealed interface WeatherUiState {

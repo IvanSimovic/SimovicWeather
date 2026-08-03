@@ -13,12 +13,15 @@ import com.simovic.simovicweather.feature.weather.domain.repository.WeatherRepos
 import com.simovic.simovicweather.feature.weather.domain.usecase.GetWeatherForCurrentLocationUseCase
 import com.simovic.simovicweather.feature.weather.domain.usecase.GetWeatherForLocationUseCase
 import com.simovic.simovicweather.feature.weather.domain.usecase.SearchLocationsUseCase
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -154,7 +157,9 @@ class WeatherViewModelTest {
             viewModel.onLocationSelected(LocationUiModel("Mostar", selectedLocation))
             advanceUntilIdle()
 
+            val target = viewModel.uiState.value.target as ForecastTarget.SelectedLocation
             assertFalse(viewModel.uiState.value.search.isVisible)
+            assertEquals(selectedLocation, target.location.location)
             assertEquals(listOf(selectedLocation), weatherRepository.locations)
             assertTrue(viewModel.uiState.value.forecast is WeatherUiState.Content)
         }
@@ -202,6 +207,7 @@ class WeatherViewModelTest {
             advanceUntilIdle()
 
             assertFalse(viewModel.uiState.value.search.isVisible)
+            assertEquals(ForecastTarget.CurrentLocation, viewModel.uiState.value.target)
             assertEquals(listOf(currentLocation), weatherRepository.locations)
             assertTrue(viewModel.uiState.value.forecast is WeatherUiState.Content)
         }
@@ -243,6 +249,57 @@ class WeatherViewModelTest {
             assertEquals(existingForecast, viewModel.uiState.value.forecast)
         }
 
+    @Test
+    fun `retry reloads the selected location`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val selectedLocation = location(name = "Mostar")
+            val weatherRepository =
+                FakeWeatherRepository { requestedLocation, call ->
+                    if (call == 1) {
+                        Result.Failure(AppFailure.Connectivity())
+                    } else {
+                        Result.Success(forecast(requestedLocation))
+                    }
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+
+            viewModel.onLocationSelected(LocationUiModel("Mostar", selectedLocation))
+            advanceUntilIdle()
+            viewModel.retry()
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.forecast is WeatherUiState.Content)
+            assertEquals(listOf(selectedLocation, selectedLocation), weatherRepository.locations)
+        }
+
+    @Test
+    fun `obsolete request cannot replace a newer selected location`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val firstResult = CompletableDeferred<Result<WeatherForecast>>()
+            val firstLocation = location(id = 1, name = "Sarajevo")
+            val secondLocation = location(id = 2, name = "Mostar")
+            val weatherRepository =
+                FakeWeatherRepository { requestedLocation, call ->
+                    if (call == 1) {
+                        withContext(NonCancellable) { firstResult.await() }
+                    } else {
+                        Result.Success(forecast(requestedLocation))
+                    }
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+
+            viewModel.onLocationSelected(LocationUiModel("Sarajevo", firstLocation))
+            runCurrent()
+            viewModel.onLocationSelected(LocationUiModel("Mostar", secondLocation))
+            runCurrent()
+            firstResult.complete(Result.Success(forecast(firstLocation)))
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.forecast as WeatherUiState.Content
+            assertEquals("Mostar, Bosnia and Herzegovina", content.weather.locationName)
+            assertEquals(listOf(firstLocation, secondLocation), weatherRepository.locations)
+        }
+
     private fun createViewModel(
         searchRepository: FakeLocationRepository = FakeLocationRepository(),
         weatherRepository: FakeWeatherRepository = FakeWeatherRepository(),
@@ -279,12 +336,15 @@ class WeatherViewModelTest {
         }
     }
 
-    private class FakeWeatherRepository : WeatherRepository {
+    private class FakeWeatherRepository(
+        private val handler: suspend (WeatherLocation, Int) -> Result<WeatherForecast> =
+            { requestedLocation, _ -> Result.Success(forecast(requestedLocation)) },
+    ) : WeatherRepository {
         val locations = mutableListOf<WeatherLocation>()
 
         override suspend fun getForecast(location: WeatherLocation): Result<WeatherForecast> {
             locations += location
-            return Result.Success(forecast(location))
+            return handler(location, locations.size)
         }
     }
 
