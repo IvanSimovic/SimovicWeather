@@ -1,7 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.simovic.simovicweather.convention.application")
     alias(libs.plugins.kotlin.serialization)
 }
+
+val releaseSigningPropertiesFile = rootProject.file("keystore.properties")
+val releaseSigningProperties =
+    releaseSigningPropertiesFile
+        .takeIf { it.isFile }
+        ?.let { file ->
+            Properties().apply {
+                file.inputStream().use(::load)
+            }
+        }
 
 android {
     namespace = "com.simovic.simovicweather"
@@ -16,11 +28,28 @@ android {
         versionName = "1.0"
     }
 
-    buildTypes {
-        release {
-            optimization {
-                enable = false
+    signingConfigs {
+        releaseSigningProperties?.let { properties ->
+            create("release") {
+                storeFile = rootProject.file(properties.getProperty("storeFile"))
+                storePassword = properties.getProperty("storePassword")
+                keyAlias = properties.getProperty("keyAlias")
+                keyPassword = properties.getProperty("keyPassword")
             }
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
+        release {
+            signingConfig = signingConfigs.findByName("release")
+            isDebuggable = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
         }
     }
 }
