@@ -140,17 +140,45 @@ internal class WeatherViewModel(
         }
     }
 
+    fun refresh() {
+        val state = mutableUiState.value
+        if (
+            state.forecast is WeatherUiState.Content &&
+            state.refresh != RefreshUiState.Refreshing &&
+            !state.search.isVisible
+        ) {
+            refreshForecast(forecastTarget)
+        }
+    }
+
     private fun loadForecast(requestedTarget: ForecastTarget) {
         forecastJob?.cancel()
         val activeRequestId = ++forecastRequestId
         val previousForecast = mutableUiState.value.forecast
-        mutableUiState.update { state -> state.copy(forecast = WeatherUiState.Loading) }
+        mutableUiState.update { state ->
+            state.copy(forecast = WeatherUiState.Loading, refresh = RefreshUiState.Idle)
+        }
         forecastJob =
             viewModelScope.launch {
                 val result = getForecast(requestedTarget)
                 if (activeRequestId == forecastRequestId) {
                     mutableUiState.update { state ->
                         stateAfterLoad(state, result, previousForecast)
+                    }
+                }
+            }
+    }
+
+    private fun refreshForecast(requestedTarget: ForecastTarget) {
+        forecastJob?.cancel()
+        val activeRequestId = ++forecastRequestId
+        mutableUiState.update { state -> state.copy(refresh = RefreshUiState.Refreshing) }
+        forecastJob =
+            viewModelScope.launch {
+                val result = getForecast(requestedTarget)
+                if (activeRequestId == forecastRequestId) {
+                    mutableUiState.update { state ->
+                        stateAfterRefresh(state, result)
                     }
                 }
             }
@@ -183,6 +211,28 @@ internal class WeatherViewModel(
                     state.withPermissionDeniedSearch().copy(forecast = previousForecast)
                 } else {
                     state.copy(forecast = presentationMapper.toWeatherErrorUiState(result.reason))
+                }
+            }
+        }
+
+    private fun stateAfterRefresh(
+        state: WeatherScreenUiState,
+        result: Result<WeatherForecast>,
+    ): WeatherScreenUiState =
+        when (result) {
+            is Result.Success -> {
+                val refreshedForecast = WeatherUiState.Content(presentationMapper.toUiModel(result.value))
+                if (state.forecast == refreshedForecast) {
+                    state.copy(refresh = RefreshUiState.UpToDate)
+                } else {
+                    state.copy(forecast = refreshedForecast, refresh = RefreshUiState.Idle)
+                }
+            }
+            is Result.Failure -> {
+                if (result.reason == AppFailure.PermissionDenied) {
+                    state.withPermissionDeniedSearch().copy(refresh = RefreshUiState.Idle)
+                } else {
+                    state.copy(refresh = RefreshUiState.Failed(presentationMapper.toError(result.reason)))
                 }
             }
         }

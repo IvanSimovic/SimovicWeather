@@ -7,6 +7,7 @@ internal data class WeatherScreenUiState(
     val target: ForecastTarget = ForecastTarget.CurrentLocation,
     val forecast: WeatherUiState = WeatherUiState.Initial,
     val search: LocationSearchUiState = LocationSearchUiState(),
+    val refresh: RefreshUiState = RefreshUiState.Idle,
 )
 
 @Immutable
@@ -16,6 +17,19 @@ internal sealed interface ForecastTarget {
     data class SelectedLocation(
         val location: LocationUiModel,
     ) : ForecastTarget
+}
+
+@Immutable
+internal sealed interface RefreshUiState {
+    data object Idle : RefreshUiState
+
+    data object Refreshing : RefreshUiState
+
+    data object UpToDate : RefreshUiState
+
+    data class Failed(
+        val reason: WeatherErrorReason,
+    ) : RefreshUiState
 }
 
 @Immutable

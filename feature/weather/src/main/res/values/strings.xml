@@ -53,4 +53,5 @@
     <string name="weather_error_malformed_data">Weather data is currently unavailable.</string>
     <string name="weather_error_server">The weather service is unavailable. Please try again.</string>
     <string name="weather_error_unknown">Something went wrong. Please try again.</string>
+    <string name="weather_already_up_to_date">Weather is already up to date.</string>
 </resources>

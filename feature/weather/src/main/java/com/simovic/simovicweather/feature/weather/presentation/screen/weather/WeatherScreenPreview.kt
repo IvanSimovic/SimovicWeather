@@ -24,6 +24,15 @@ private fun WeatherContentPreview() {
     WeatherPreview(uiState = WeatherUiState.Content(sampleWeather()))
 }
 
+@PreviewAppThemes
+@Composable
+private fun WeatherRefreshingPreview() {
+    WeatherPreview(
+        uiState = WeatherUiState.Content(sampleWeather()),
+        refresh = RefreshUiState.Refreshing,
+    )
+}
+
 @Preview(
     name = "Narrow forecast",
     widthDp = 320,
@@ -65,10 +74,13 @@ private fun WeatherNonRetryableErrorPreview() {
 }
 
 @Composable
-private fun WeatherPreview(uiState: WeatherUiState) {
+private fun WeatherPreview(
+    uiState: WeatherUiState,
+    refresh: RefreshUiState = RefreshUiState.Idle,
+) {
     AppPreview {
         WeatherScreenContent(
-            uiState = WeatherScreenUiState(forecast = uiState),
+            uiState = WeatherScreenUiState(forecast = uiState, refresh = refresh),
             onUseCurrentLocation = {},
             onRetry = {},
             onSearchOpen = {},
@@ -77,6 +89,7 @@ private fun WeatherPreview(uiState: WeatherUiState) {
             onSearchClear = {},
             onSearchRetry = {},
             onLocationSelect = {},
+            onRefresh = {},
         )
     }
 }

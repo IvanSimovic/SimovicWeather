@@ -24,6 +24,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -233,9 +234,11 @@ class WeatherViewModelTest {
     @Test
     fun `current location permission failure opens city picker and preserves forecast`() =
         runTest(mainDispatcherRule.dispatcher) {
+            val deviceLocationRepository = FakeDeviceLocationRepository()
+            deviceLocationRepository.result = Result.Failure(AppFailure.PermissionDenied)
             val viewModel =
                 createViewModel(
-                    deviceLocationRepository = PermissionDeniedDeviceLocationRepository(),
+                    deviceLocationRepository = deviceLocationRepository,
                 )
             viewModel.onLocationSelected(LocationUiModel("Mostar", location(name = "Mostar")))
             advanceUntilIdle()
@@ -300,6 +303,264 @@ class WeatherViewModelTest {
             assertEquals(listOf(firstLocation, secondLocation), weatherRepository.locations)
         }
 
+    @Test
+    fun `refresh preserves selected forecast while request is running and replaces it on success`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val refreshResult = CompletableDeferred<Result<WeatherForecast>>()
+            val weatherRepository =
+                FakeWeatherRepository { selectedLocation, call ->
+                    if (call == 1) {
+                        Result.Success(forecast(selectedLocation, temperature = 20.0))
+                    } else {
+                        refreshResult.await()
+                    }
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            val selectedLocation = location(name = "Mostar")
+            viewModel.onLocationSelected(LocationUiModel("Mostar", selectedLocation))
+            advanceUntilIdle()
+            val previousForecast = viewModel.uiState.value.forecast
+
+            viewModel.refresh()
+            runCurrent()
+
+            assertEquals(previousForecast, viewModel.uiState.value.forecast)
+            assertEquals(RefreshUiState.Refreshing, viewModel.uiState.value.refresh)
+
+            refreshResult.complete(Result.Success(forecast(selectedLocation, temperature = 27.0)))
+            advanceUntilIdle()
+
+            assertEquals(RefreshUiState.Idle, viewModel.uiState.value.refresh)
+            val refreshed = viewModel.uiState.value.forecast as WeatherUiState.Content
+            assertEquals(27, refreshed.weather.current.temperatureCelsius)
+        }
+
+    @Test
+    fun `current location refresh resolves device location again`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val firstLocation = location(id = 1, name = "First")
+            val secondLocation = location(id = 2, name = "Second")
+            val deviceRepository = FakeDeviceLocationRepository(firstLocation, secondLocation)
+            val weatherRepository = FakeWeatherRepository()
+            val viewModel =
+                createViewModel(
+                    weatherRepository = weatherRepository,
+                    deviceLocationRepository = deviceRepository,
+                )
+
+            viewModel.onLocationPermissionRequestResult(granted = true)
+            advanceUntilIdle()
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(2, deviceRepository.calls)
+            assertEquals(listOf(firstLocation, secondLocation), weatherRepository.locations)
+        }
+
+    @Test
+    fun `duplicate refresh requests are ignored`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val refreshResult = CompletableDeferred<Result<WeatherForecast>>()
+            val weatherRepository =
+                FakeWeatherRepository { selectedLocation, call ->
+                    if (call == 1) Result.Success(forecast(selectedLocation)) else refreshResult.await()
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            val selectedLocation = location()
+            viewModel.onLocationSelected(LocationUiModel("Sarajevo", selectedLocation))
+            advanceUntilIdle()
+
+            viewModel.refresh()
+            viewModel.refresh()
+            runCurrent()
+
+            assertEquals(2, weatherRepository.locations.size)
+            refreshResult.complete(Result.Success(forecast(selectedLocation)))
+            advanceUntilIdle()
+        }
+
+    @Test
+    fun `refresh failure preserves content and another pull retries`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val weatherRepository =
+                FakeWeatherRepository { selectedLocation, call ->
+                    when (call) {
+                        1 -> Result.Success(forecast(selectedLocation, temperature = 20.0))
+                        2 -> Result.Failure(AppFailure.Connectivity())
+                        else -> Result.Success(forecast(selectedLocation, temperature = 25.0))
+                    }
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            viewModel.onLocationSelected(LocationUiModel("Sarajevo", location()))
+            advanceUntilIdle()
+            val previousForecast = viewModel.uiState.value.forecast
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(previousForecast, viewModel.uiState.value.forecast)
+            assertEquals(
+                RefreshUiState.Failed(WeatherErrorReason.NETWORK),
+                viewModel.uiState.value.refresh,
+            )
+
+            viewModel.refresh()
+            advanceUntilIdle()
+            assertEquals(25, (viewModel.uiState.value.forecast as WeatherUiState.Content).weather.current.temperatureCelsius)
+        }
+
+    @Test
+    fun `unchanged refresh reports up to date and preserves content`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val selectedLocation = location(name = "Mostar")
+            val weatherRepository = FakeWeatherRepository()
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            viewModel.onLocationSelected(LocationUiModel("Mostar", selectedLocation))
+            advanceUntilIdle()
+            val previousForecast = viewModel.uiState.value.forecast
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(previousForecast, viewModel.uiState.value.forecast)
+            assertEquals(RefreshUiState.UpToDate, viewModel.uiState.value.refresh)
+        }
+
+    @Test
+    fun `same current time with changed current conditions updates content`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val selectedLocation = location(name = "Mostar")
+            val weatherRepository =
+                FakeWeatherRepository { location, call ->
+                    Result.Success(forecast(location, temperature = if (call == 1) 25.0 else 26.0))
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            viewModel.onLocationSelected(LocationUiModel("Mostar", selectedLocation))
+            advanceUntilIdle()
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val weather = (viewModel.uiState.value.forecast as WeatherUiState.Content).weather
+            assertEquals(26, weather.current.temperatureCelsius)
+            assertEquals(RefreshUiState.Idle, viewModel.uiState.value.refresh)
+        }
+
+    @Test
+    fun `same current time with changed daily forecast updates content`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val selectedLocation = location(name = "Mostar")
+            val weatherRepository =
+                FakeWeatherRepository { location, call ->
+                    Result.Success(forecast(location, dailyMaximumTemperature = if (call == 1) 26.0 else 28.0))
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            viewModel.onLocationSelected(LocationUiModel("Mostar", selectedLocation))
+            advanceUntilIdle()
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val weather = (viewModel.uiState.value.forecast as WeatherUiState.Content).weather
+            assertEquals(28, weather.days.first().maximumTemperatureCelsius)
+            assertEquals(RefreshUiState.Idle, viewModel.uiState.value.refresh)
+        }
+
+    @Test
+    fun `new current time updates otherwise unchanged content`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val selectedLocation = location(name = "Mostar")
+            val weatherRepository =
+                FakeWeatherRepository { location, call ->
+                    val currentTime =
+                        if (call == 1) {
+                            LocalDateTime.of(2026, 7, 31, 12, 0)
+                        } else {
+                            LocalDateTime.of(2026, 7, 31, 12, 15)
+                        }
+                    Result.Success(forecast(location, currentTime = currentTime))
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            viewModel.onLocationSelected(LocationUiModel("Mostar", selectedLocation))
+            advanceUntilIdle()
+            val previousWeather = (viewModel.uiState.value.forecast as WeatherUiState.Content).weather
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            val refreshedWeather = (viewModel.uiState.value.forecast as WeatherUiState.Content).weather
+            assertNotEquals(previousWeather.updatedAt, refreshedWeather.updatedAt)
+            assertEquals(RefreshUiState.Idle, viewModel.uiState.value.refresh)
+        }
+
+    @Test
+    fun `raw changes with unchanged visible values report up to date`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val selectedLocation = location(name = "Mostar")
+            val weatherRepository =
+                FakeWeatherRepository { location, call ->
+                    Result.Success(forecast(location, temperature = if (call == 1) 25.1 else 25.2))
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            viewModel.onLocationSelected(LocationUiModel("Mostar", selectedLocation))
+            advanceUntilIdle()
+            val previousForecast = viewModel.uiState.value.forecast
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertEquals(previousForecast, viewModel.uiState.value.forecast)
+            assertEquals(RefreshUiState.UpToDate, viewModel.uiState.value.refresh)
+        }
+
+    @Test
+    fun `selected location supersedes obsolete refresh result`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val refreshResult = CompletableDeferred<Result<WeatherForecast>>()
+            val firstLocation = location(id = 1, name = "Sarajevo")
+            val secondLocation = location(id = 2, name = "Mostar")
+            val weatherRepository =
+                FakeWeatherRepository { requestedLocation, call ->
+                    when (call) {
+                        1 -> Result.Success(forecast(requestedLocation, temperature = 20.0))
+                        2 -> withContext(NonCancellable) { refreshResult.await() }
+                        else -> Result.Success(forecast(requestedLocation, temperature = 25.0))
+                    }
+                }
+            val viewModel = createViewModel(weatherRepository = weatherRepository)
+            viewModel.onLocationSelected(LocationUiModel("Sarajevo", firstLocation))
+            advanceUntilIdle()
+
+            viewModel.refresh()
+            runCurrent()
+            viewModel.onLocationSelected(LocationUiModel("Mostar", secondLocation))
+            runCurrent()
+            refreshResult.complete(Result.Success(forecast(firstLocation, temperature = 30.0)))
+            advanceUntilIdle()
+
+            val content = viewModel.uiState.value.forecast as WeatherUiState.Content
+            assertEquals("Mostar, Bosnia and Herzegovina", content.weather.locationName)
+            assertEquals(25, content.weather.current.temperatureCelsius)
+        }
+
+    @Test
+    fun `permission denied refresh preserves content and opens city picker`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val deviceRepository = FakeDeviceLocationRepository()
+            val viewModel = createViewModel(deviceLocationRepository = deviceRepository)
+            viewModel.onLocationPermissionRequestResult(granted = true)
+            advanceUntilIdle()
+            deviceRepository.result = Result.Failure(AppFailure.PermissionDenied)
+
+            viewModel.refresh()
+            advanceUntilIdle()
+
+            assertTrue(viewModel.uiState.value.forecast is WeatherUiState.Content)
+            assertEquals(RefreshUiState.Idle, viewModel.uiState.value.refresh)
+            assertTrue(viewModel.uiState.value.search.isVisible)
+            assertTrue(viewModel.uiState.value.search.isLocationPermissionDenied)
+        }
+
     private fun createViewModel(
         searchRepository: FakeLocationRepository = FakeLocationRepository(),
         weatherRepository: FakeWeatherRepository = FakeWeatherRepository(),
@@ -349,14 +610,18 @@ class WeatherViewModelTest {
     }
 
     private class FakeDeviceLocationRepository(
-        private val location: WeatherLocation = location(),
+        vararg locations: WeatherLocation,
     ) : DeviceLocationRepository {
-        override suspend fun getCurrentLocation(): Result<WeatherLocation> = Result.Success(location)
-    }
+        private val locations = locations.toList().ifEmpty { listOf(location()) }
+        var result: Result<WeatherLocation>? = null
+        var calls = 0
+            private set
 
-    private class PermissionDeniedDeviceLocationRepository : DeviceLocationRepository {
-        override suspend fun getCurrentLocation(): Result<WeatherLocation> =
-            Result.Failure(AppFailure.PermissionDenied)
+        override suspend fun getCurrentLocation(): Result<WeatherLocation> {
+            val resolved = result ?: Result.Success(locations[calls.coerceAtMost(locations.lastIndex)])
+            calls += 1
+            return resolved
+        }
     }
 
     private companion object {
@@ -372,30 +637,34 @@ class WeatherViewModelTest {
             coordinates = Coordinates(43.8563, 18.4131),
         )
 
-        fun forecast(location: WeatherLocation) =
-            WeatherForecast(
-                location = location,
-                current =
-                    CurrentWeather(
-                        time = LocalDateTime.of(2026, 7, 31, 12, 0),
-                        temperature = 25.0,
-                        apparentTemperature = 26.0,
-                        humidity = 50,
-                        precipitation = 0.0,
+        fun forecast(
+            location: WeatherLocation,
+            temperature: Double = 25.0,
+            currentTime: LocalDateTime = LocalDateTime.of(2026, 7, 31, 12, 0),
+            dailyMaximumTemperature: Double = 26.0,
+        ) = WeatherForecast(
+            location = location,
+            current =
+                CurrentWeather(
+                    time = currentTime,
+                    temperature = temperature,
+                    apparentTemperature = 26.0,
+                    humidity = 50,
+                    precipitation = 0.0,
+                    weatherCode = 1,
+                    pressure = 1_015.0,
+                    windSpeed = 10.0,
+                ),
+            days =
+                listOf(
+                    DailyWeather(
+                        date = LocalDate.of(2026, 7, 31),
                         weatherCode = 1,
-                        pressure = 1_015.0,
-                        windSpeed = 10.0,
+                        minTemperature = 15.0,
+                        maxTemperature = dailyMaximumTemperature,
+                        precipitationProbability = 10,
                     ),
-                days =
-                    listOf(
-                        DailyWeather(
-                            date = LocalDate.of(2026, 7, 31),
-                            weatherCode = 1,
-                            minTemperature = 15.0,
-                            maxTemperature = 26.0,
-                            precipitationProbability = 10,
-                        ),
-                    ),
-            )
+                ),
+        )
     }
 }
